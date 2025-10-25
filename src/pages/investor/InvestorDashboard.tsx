@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Bell, Users, Search, LogOut } from "lucide-react";
+import { TrendingUp, Bell, Users, Search, LogOut, Heart, MessageCircle, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -22,6 +24,10 @@ const InvestorDashboard = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({ name: "", bio: "", investment_goal: "" });
   const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, any[]>>({});
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedExpert, setSelectedExpert] = useState<any>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -130,6 +136,23 @@ const InvestorDashboard = () => {
       .order("created_at", { ascending: false });
 
     setInsights(data || []);
+
+    // Load comments for each insight
+    if (data) {
+      for (const insight of data) {
+        loadComments(insight.id);
+      }
+    }
+  };
+
+  const loadComments = async (insightId: string) => {
+    const { data } = await supabase
+      .from("comments")
+      .select("*, profiles!comments_user_id_fkey(*)")
+      .eq("insight_id", insightId)
+      .order("created_at", { ascending: true });
+
+    setComments(prev => ({ ...prev, [insightId]: data || [] }));
   };
 
   const loadNotifications = async () => {
@@ -188,9 +211,25 @@ const InvestorDashboard = () => {
 
       toast.success("Comment added");
       setNewComment({ ...newComment, [insightId]: "" });
+      loadComments(insightId);
     } catch (error: any) {
       toast.error(error.message);
     }
+  };
+
+  const handleLike = (insightId: string) => {
+    setLikes(prev => ({
+      ...prev,
+      [insightId]: (prev[insightId] || 0) + 1
+    }));
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", notificationId);
+    loadNotifications();
   };
 
   const handleLogout = async () => {
@@ -230,7 +269,12 @@ const InvestorDashboard = () => {
                   Browse Experts
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => setShowNotifications(true)}
+              >
                 <Bell className="h-5 w-5" />
                 {notifications.some(n => !n.read) && (
                   <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
@@ -264,8 +308,11 @@ const InvestorDashboard = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {insights.map((insight) => (
-                      <Card key={insight.id} className="border-border">
+                    {insights.map((insight, index) => (
+                      <Card 
+                        key={insight.id} 
+                        className={`border-border ${index % 2 === 0 ? 'bg-muted/20' : 'bg-card'}`}
+                      >
                         <CardHeader>
                           <div className="flex items-center space-x-3 mb-2">
                             <Avatar className="h-10 w-10">
@@ -283,17 +330,49 @@ const InvestorDashboard = () => {
                         </CardHeader>
                         <CardContent>
                           <p className="text-foreground mb-4">{insight.content}</p>
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Add a comment..."
-                                value={newComment[insight.id] || ""}
-                                onChange={(e) =>
-                                  setNewComment({ ...newComment, [insight.id]: e.target.value })
-                                }
-                              />
-                              <Button onClick={() => handleAddComment(insight.id)}>Comment</Button>
+                          
+                          <div className="flex items-center gap-4 mb-4 pt-2 border-t">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleLike(insight.id)}
+                              className="gap-2"
+                            >
+                              <Heart className={`h-4 w-4 ${likes[insight.id] ? 'fill-red-500 text-red-500' : ''}`} />
+                              <span>{likes[insight.id] || 0}</span>
+                            </Button>
+                            <Button variant="ghost" size="sm" className="gap-2">
+                              <MessageCircle className="h-4 w-4" />
+                              <span>{comments[insight.id]?.length || 0}</span>
+                            </Button>
+                          </div>
+
+                          {comments[insight.id]?.length > 0 && (
+                            <div className="space-y-3 mb-4 p-3 bg-muted/30 rounded-lg">
+                              {comments[insight.id].map((comment: any) => (
+                                <div key={comment.id} className="flex items-start space-x-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={comment.profiles?.image_url} />
+                                    <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{comment.profiles?.name}</p>
+                                    <p className="text-sm text-muted-foreground">{comment.content}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add a comment..."
+                              value={newComment[insight.id] || ""}
+                              onChange={(e) =>
+                                setNewComment({ ...newComment, [insight.id]: e.target.value })
+                              }
+                            />
+                            <Button onClick={() => handleAddComment(insight.id)}>Comment</Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -397,7 +476,11 @@ const InvestorDashboard = () => {
                 ) : (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {filteredSubscriptions.map((sub) => (
-                      <div key={sub.id} className="flex items-center space-x-3">
+                      <div 
+                        key={sub.id} 
+                        className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-smooth"
+                        onClick={() => setSelectedExpert(sub)}
+                      >
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={sub.profiles?.image_url} />
                           <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
@@ -417,6 +500,69 @@ const InvestorDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Notifications Sheet */}
+      <Sheet open={showNotifications} onOpenChange={setShowNotifications}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Notifications</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 mt-6">
+            {notifications.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No notifications</p>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 rounded-lg border ${
+                    notification.read ? 'bg-card' : 'bg-primary/5 border-primary/20'
+                  }`}
+                  onClick={() => !notification.read && markNotificationAsRead(notification.id)}
+                >
+                  <p className="text-sm font-medium">{notification.type}</p>
+                  <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(notification.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Expert Detail Dialog */}
+      {selectedExpert && (
+        <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Expert Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={selectedExpert.profiles?.image_url} />
+                  <AvatarFallback className="text-2xl">
+                    {selectedExpert.profiles?.name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold">{selectedExpert.profiles?.name}</h3>
+                  <p className="text-muted-foreground mt-1">{selectedExpert.profiles?.bio}</p>
+                  <div className="flex gap-2 mt-3">
+                    <span className="text-sm font-semibold text-primary">
+                      ${selectedExpert.expert_profiles?.subscription_fee}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      / {selectedExpert.expert_profiles?.subscription_duration}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

@@ -29,11 +29,14 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <section id="home" className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-              Smarter investing starts with expert guidance.
+            <p className="text-sm font-medium text-primary mb-4 tracking-wide uppercase">
+              Connecting Experts & Investors
+            </p>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 max-w-4xl mx-auto leading-tight">
+              Smarter investing starts with expert guidance
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               A simple platform where investors can discover, connect, and gain insights from experts wherever they might be.

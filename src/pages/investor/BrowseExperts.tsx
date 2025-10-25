@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { TrendingUp, Search, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 const BrowseExperts = () => {
   const navigate = useNavigate();
@@ -16,6 +18,8 @@ const BrowseExperts = () => {
   const [subscribedExpertIds, setSubscribedExpertIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedExpert, setSelectedExpert] = useState<any>(null);
+  const [expertTestimonials, setExpertTestimonials] = useState<any[]>([]);
 
   useEffect(() => {
     loadExperts();
@@ -95,6 +99,18 @@ const BrowseExperts = () => {
     }
   };
 
+  const viewExpertDetails = async (expert: any) => {
+    setSelectedExpert(expert);
+
+    // Load testimonials
+    const { data } = await supabase
+      .from("testimonials")
+      .select("*")
+      .eq("expert_id", expert.user_id);
+
+    setExpertTestimonials(data || []);
+  };
+
   const filteredExperts = experts.filter(expert =>
     expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     expert.bio?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -155,7 +171,11 @@ const BrowseExperts = () => {
               const isSubscribed = subscribedExpertIds.has(expert.user_id);
 
               return (
-                <Card key={expert.id} className="card-shadow hover:card-shadow-hover transition-smooth">
+                <Card 
+                  key={expert.id} 
+                  className="card-shadow hover:card-shadow-hover transition-smooth cursor-pointer"
+                  onClick={() => viewExpertDetails(expert)}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -201,7 +221,10 @@ const BrowseExperts = () => {
                     <Button
                       className="w-full"
                       variant={isSubscribed ? "outline" : "default"}
-                      onClick={() => handleSubscribe(expert.user_id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSubscribe(expert.user_id);
+                      }}
                     >
                       {isSubscribed ? "Unsubscribe" : "Subscribe"}
                     </Button>
@@ -212,6 +235,85 @@ const BrowseExperts = () => {
           </div>
         )}
       </div>
+
+      {/* Expert Detail Dialog */}
+      {selectedExpert && (
+        <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Expert Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={selectedExpert.image_url} />
+                  <AvatarFallback className="text-3xl">
+                    {selectedExpert.name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold">{selectedExpert.name}</h3>
+                  <p className="text-muted-foreground mt-2">{selectedExpert.bio || "No bio available"}</p>
+                  <div className="flex gap-3 mt-4">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Subscription Fee: </span>
+                      <span className="text-lg font-semibold text-primary">
+                        {selectedExpert.expert_profiles?.[0]?.subscription_fee === 0
+                          ? "Free"
+                          : `$${selectedExpert.expert_profiles?.[0]?.subscription_fee}`}
+                      </span>
+                    </div>
+                    {selectedExpert.expert_profiles?.[0]?.subscription_fee > 0 && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">/ </span>
+                        <span className="text-sm capitalize">
+                          {selectedExpert.expert_profiles?.[0]?.subscription_duration}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    className="mt-4"
+                    variant={subscribedExpertIds.has(selectedExpert.user_id) ? "outline" : "default"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSubscribe(selectedExpert.user_id);
+                    }}
+                  >
+                    {subscribedExpertIds.has(selectedExpert.user_id) ? "Unsubscribe" : "Subscribe"}
+                  </Button>
+                </div>
+              </div>
+
+              {expertTestimonials.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-4">Testimonials</h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {expertTestimonials.map((testimonial) => (
+                        <div key={testimonial.id} className="border rounded-lg overflow-hidden">
+                          {testimonial.media_type === "image" ? (
+                            <img 
+                              src={testimonial.media_url} 
+                              alt="Testimonial" 
+                              className="w-full h-40 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-40 bg-muted flex items-center justify-center p-4">
+                              <p className="text-xs text-center truncate">{testimonial.media_url}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

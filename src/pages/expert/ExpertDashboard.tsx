@@ -23,11 +23,13 @@ const ExpertDashboard = () => {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [newInsight, setNewInsight] = useState({ title: "", content: "" });
+  const [newInsight, setNewInsight] = useState({ title: "", content: "", image_url: "" });
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({ name: "", bio: "" });
   const [pricingData, setPricingData] = useState<{ fee: number; duration: "free" | "monthly" | "quarterly" | "yearly" }>({ fee: 0, duration: "monthly" });
   const [subscriberGrowthData, setSubscriberGrowthData] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [newTestimonial, setNewTestimonial] = useState({ media_url: "", media_type: "image" });
 
   useEffect(() => {
     loadDashboardData();
@@ -92,6 +94,7 @@ const ExpertDashboard = () => {
       await loadSubscribers();
       await loadInsights();
       await loadNotifications();
+      await loadTestimonials();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -161,6 +164,19 @@ const ExpertDashboard = () => {
     setNotifications(data || []);
   };
 
+  const loadTestimonials = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("testimonials")
+      .select("*")
+      .eq("expert_id", user.id)
+      .order("created_at", { ascending: false });
+
+    setTestimonials(data || []);
+  };
+
   const handleUpdateProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -225,7 +241,7 @@ const ExpertDashboard = () => {
       });
 
       toast.success("Insight published successfully");
-      setNewInsight({ title: "", content: "" });
+      setNewInsight({ title: "", content: "", image_url: "" });
       loadInsights();
     } catch (error: any) {
       toast.error(error.message);
@@ -235,6 +251,30 @@ const ExpertDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleAddTestimonial = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (!newTestimonial.media_url) {
+        toast.error("Please enter a media URL");
+        return;
+      }
+
+      await supabase.from("testimonials").insert({
+        expert_id: user.id,
+        media_url: newTestimonial.media_url,
+        media_type: newTestimonial.media_type,
+      });
+
+      toast.success("Testimonial added successfully");
+      setNewTestimonial({ media_url: "", media_type: "image" });
+      loadTestimonials();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   if (loading) {
@@ -425,6 +465,14 @@ const ExpertDashboard = () => {
                     placeholder="Share your investment insights..."
                   />
                 </div>
+                <div>
+                  <Label>Image URL (Optional)</Label>
+                  <Input
+                    value={newInsight.image_url}
+                    onChange={(e) => setNewInsight({ ...newInsight, image_url: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
                 <Button onClick={handlePublishInsight} className="w-full">
                   <FileText className="h-4 w-4 mr-2" />
                   Publish Insight
@@ -612,8 +660,97 @@ const ExpertDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Testimonials Section */}
+            <Card className="card-shadow">
+              <CardHeader>
+                <CardTitle>Testimonials</CardTitle>
+                <CardDescription>Add images or video links to showcase your expertise</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Media URL</Label>
+                    <Input
+                      value={newTestimonial.media_url}
+                      onChange={(e) => setNewTestimonial({ ...newTestimonial, media_url: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  <div>
+                    <Label>Media Type</Label>
+                    <Select
+                      value={newTestimonial.media_type}
+                      onValueChange={(value) => setNewTestimonial({ ...newTestimonial, media_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="image">Image</SelectItem>
+                        <SelectItem value="video">Video</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={handleAddTestimonial} className="w-full">
+                  Add Testimonial
+                </Button>
+
+                {testimonials.length > 0 && (
+                  <div className="mt-6 grid md:grid-cols-3 gap-4">
+                    {testimonials.map((testimonial) => (
+                      <div key={testimonial.id} className="border rounded-lg p-2">
+                        {testimonial.media_type === "image" ? (
+                          <img 
+                            src={testimonial.media_url} 
+                            alt="Testimonial" 
+                            className="w-full h-32 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted flex items-center justify-center rounded">
+                            <p className="text-xs">Video: {testimonial.media_url}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Recent Subscribers Section */}
+        {subscribers.length > 0 && (
+          <Card className="card-shadow">
+            <CardHeader>
+              <CardTitle>Recent Subscribers</CardTitle>
+              <CardDescription>Your newest followers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {subscribers.slice(0, 6).reverse().map((sub) => (
+                  <div 
+                    key={sub.id} 
+                    className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:border-primary transition-smooth cursor-pointer"
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={sub.profiles?.image_url} />
+                      <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{sub.profiles?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(sub.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
