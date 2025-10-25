@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Bell, Users, FileText, Settings, LogOut } from "lucide-react";
+import { TrendingUp, Bell, Users, FileText, Settings, LogOut, BarChart3, DollarSign } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const ExpertDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +27,7 @@ const ExpertDashboard = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({ name: "", bio: "" });
   const [pricingData, setPricingData] = useState<{ fee: number; duration: "free" | "monthly" | "quarterly" | "yearly" }>({ fee: 0, duration: "monthly" });
+  const [subscriberGrowthData, setSubscriberGrowthData] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -102,9 +106,32 @@ const ExpertDashboard = () => {
     const { data } = await supabase
       .from("subscriptions")
       .select("*, profiles!subscriptions_investor_id_fkey(*)")
-      .eq("expert_id", user.id);
+      .eq("expert_id", user.id)
+      .order("created_at", { ascending: true });
 
     setSubscribers(data || []);
+    
+    // Process data for growth chart
+    if (data && data.length > 0) {
+      const growthMap = new Map<string, number>();
+      let cumulativeCount = 0;
+      
+      data.forEach((sub) => {
+        const date = new Date(sub.created_at);
+        const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+        cumulativeCount++;
+        growthMap.set(monthYear, cumulativeCount);
+      });
+      
+      const chartData = Array.from(growthMap.entries()).map(([month, count]) => ({
+        month,
+        subscribers: count,
+      }));
+      
+      setSubscriberGrowthData(chartData);
+    } else {
+      setSubscriberGrowthData([]);
+    }
   };
 
   const loadInsights = async () => {
@@ -247,218 +274,346 @@ const ExpertDashboard = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Stats */}
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="h-5 w-5 mr-2 text-primary" />
-                Subscribers
-              </CardTitle>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="card-shadow hover:card-shadow-hover transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Subscribers</CardTitle>
+              <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{subscribers.length}</p>
+              <div className="text-3xl font-bold">{subscribers.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Active subscribers
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-primary" />
-                Insights Published
-              </CardTitle>
+          <Card className="card-shadow hover:card-shadow-hover transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Insights</CardTitle>
+              <FileText className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{insights.length}</p>
+              <div className="text-3xl font-bold">{insights.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Published content
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-primary" />
-                Subscription Fee
-              </CardTitle>
+          <Card className="card-shadow hover:card-shadow-hover transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">${expertProfile?.subscription_fee || 0}</p>
-              <p className="text-sm text-muted-foreground capitalize">
-                {expertProfile?.subscription_duration || "monthly"}
+              <div className="text-3xl font-bold">
+                ${(subscribers.length * (expertProfile?.subscription_fee || 0)).toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Based on subscribers
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="card-shadow hover:card-shadow-hover transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Subscription Fee</CardTitle>
+              <Settings className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">${expertProfile?.subscription_fee || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1 capitalize">
+                Per {expertProfile?.subscription_duration || "month"}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          {/* Profile Section */}
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>Manage your expert profile</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {editingProfile ? (
-                <>
+        {/* Subscriber Growth Chart */}
+        <Card className="card-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+                  Subscriber Growth
+                </CardTitle>
+                <CardDescription>Track your subscriber growth over time</CardDescription>
+              </div>
+              <Badge variant="secondary">{subscribers.length} Total</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {subscriberGrowthData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <p className="text-muted-foreground">No subscriber data yet. Start growing your audience!</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={subscriberGrowthData}>
+                  <defs>
+                    <linearGradient id="colorSubscribers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px"
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="subscribers" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorSubscribers)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="insights" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+            <TabsTrigger value="insights">Content</TabsTrigger>
+            <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          {/* Content Tab */}
+          <TabsContent value="insights" className="space-y-6">
+            {/* Publish New Insight */}
+            <Card className="card-shadow">
+              <CardHeader>
+                <CardTitle>Publish New Insight</CardTitle>
+                <CardDescription>Share your expertise with subscribers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={newInsight.title}
+                    onChange={(e) => setNewInsight({ ...newInsight, title: e.target.value })}
+                    placeholder="Market Analysis: Tech Stocks Q1 2025"
+                  />
+                </div>
+                <div>
+                  <Label>Content</Label>
+                  <Textarea
+                    value={newInsight.content}
+                    onChange={(e) => setNewInsight({ ...newInsight, content: e.target.value })}
+                    rows={8}
+                    placeholder="Share your investment insights..."
+                  />
+                </div>
+                <Button onClick={handlePublishInsight} className="w-full">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Publish Insight
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Recent Insights */}
+            <Card className="card-shadow">
+              <CardHeader>
+                <CardTitle>Your Recent Insights</CardTitle>
+                <CardDescription>Your published content</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {insights.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No insights published yet</p>
+                    <p className="text-sm text-muted-foreground">Start sharing your expertise with subscribers</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {insights.map((insight) => (
+                      <div key={insight.id} className="border border-border rounded-lg p-4 hover:border-primary transition-smooth">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-lg mb-2">{insight.title}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{insight.content}</p>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <span>{new Date(insight.created_at).toLocaleDateString()}</span>
+                              <span>•</span>
+                              <span>{new Date(insight.created_at).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Subscribers Tab */}
+          <TabsContent value="subscribers">
+            <Card className="card-shadow">
+              <CardHeader>
+                <CardTitle>Your Subscribers</CardTitle>
+                <CardDescription>People who follow your insights</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {subscribers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No subscribers yet</p>
+                    <p className="text-sm text-muted-foreground">Share your profile to start building your audience</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {subscribers.map((sub) => (
+                      <div key={sub.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:border-primary transition-smooth">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={sub.profiles?.image_url} />
+                            <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{sub.profiles?.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Subscribed on {new Date(sub.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">Active</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Profile Settings */}
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle>Profile Settings</CardTitle>
+                  <CardDescription>Manage your expert profile</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {editingProfile ? (
+                    <>
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Bio</Label>
+                        <Textarea
+                          value={profileData.bio}
+                          onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                          rows={4}
+                          placeholder="Tell investors about your expertise..."
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleUpdateProfile}>Save Changes</Button>
+                        <Button variant="outline" onClick={() => setEditingProfile(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-4 mb-6">
+                        <Avatar className="h-20 w-20">
+                          <AvatarImage src={profile?.image_url} />
+                          <AvatarFallback className="text-2xl">{profile?.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-lg">{profile?.name}</p>
+                          <p className="text-sm text-muted-foreground">{profile?.bio || "No bio yet"}</p>
+                        </div>
+                      </div>
+                      <Button onClick={() => setEditingProfile(true)} className="w-full">
+                        Edit Profile
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Pricing Settings */}
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle>Pricing Settings</CardTitle>
+                  <CardDescription>Set your subscription pricing</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label>Name</Label>
+                    <Label>Subscription Fee ($)</Label>
                     <Input
-                      value={profileData.name}
-                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      type="number"
+                      value={pricingData.fee}
+                      onChange={(e) => setPricingData({ ...pricingData, fee: parseFloat(e.target.value) || 0 })}
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
                     />
                   </div>
                   <div>
-                    <Label>Bio</Label>
-                    <Textarea
-                      value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                      rows={4}
-                    />
+                    <Label>Billing Period</Label>
+                    <Select
+                      value={pricingData.duration}
+                      onValueChange={(value) => setPricingData({ ...pricingData, duration: value as "free" | "monthly" | "quarterly" | "yearly" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleUpdateProfile}>Save</Button>
-                    <Button variant="outline" onClick={() => setEditingProfile(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={profile?.image_url} />
-                      <AvatarFallback>{profile?.name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">{profile?.name}</p>
-                      <p className="text-sm text-muted-foreground">{profile?.bio || "No bio yet"}</p>
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">Estimated Monthly Revenue</span>
+                      <span className="font-semibold text-lg">
+                        ${(subscribers.length * (pricingData.fee || 0)).toFixed(2)}
+                      </span>
                     </div>
+                    <p className="text-xs text-muted-foreground">Based on {subscribers.length} active subscribers</p>
                   </div>
-                  <Button onClick={() => setEditingProfile(true)}>Edit Profile</Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Pricing Section */}
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle>Pricing Settings</CardTitle>
-              <CardDescription>Set your subscription pricing</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Subscription Fee ($)</Label>
-                <Input
-                  type="number"
-                  value={pricingData.fee}
-                  onChange={(e) => setPricingData({ ...pricingData, fee: parseFloat(e.target.value) })}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <Label>Duration</Label>
-                <Select
-                  value={pricingData.duration}
-                  onValueChange={(value) => setPricingData({ ...pricingData, duration: value as "free" | "monthly" | "quarterly" | "yearly" })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleUpdatePricing}>Update Pricing</Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Publish Insight */}
-        <Card className="card-shadow mt-6">
-          <CardHeader>
-            <CardTitle>Publish New Insight</CardTitle>
-            <CardDescription>Share your expertise with subscribers</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Title</Label>
-              <Input
-                value={newInsight.title}
-                onChange={(e) => setNewInsight({ ...newInsight, title: e.target.value })}
-                placeholder="Market Analysis: Tech Stocks Q1 2025"
-              />
+                  <Button onClick={handleUpdatePricing} className="w-full">
+                    Update Pricing
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-            <div>
-              <Label>Content</Label>
-              <Textarea
-                value={newInsight.content}
-                onChange={(e) => setNewInsight({ ...newInsight, content: e.target.value })}
-                rows={6}
-                placeholder="Share your investment insights..."
-              />
-            </div>
-            <Button onClick={handlePublishInsight}>Publish Insight</Button>
-          </CardContent>
-        </Card>
-
-        {/* Recent Insights */}
-        <Card className="card-shadow mt-6">
-          <CardHeader>
-            <CardTitle>Your Recent Insights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {insights.length === 0 ? (
-              <p className="text-muted-foreground">No insights published yet</p>
-            ) : (
-              <div className="space-y-4">
-                {insights.slice(0, 5).map((insight) => (
-                  <div key={insight.id} className="border-b border-border pb-4 last:border-0">
-                    <h4 className="font-semibold">{insight.title}</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{insight.content}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(insight.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Subscribers List */}
-        <Card className="card-shadow mt-6">
-          <CardHeader>
-            <CardTitle>Your Subscribers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subscribers.length === 0 ? (
-              <p className="text-muted-foreground">No subscribers yet</p>
-            ) : (
-              <div className="space-y-3">
-                {subscribers.map((sub) => (
-                  <div key={sub.id} className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={sub.profiles?.image_url} />
-                      <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{sub.profiles?.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Subscribed {new Date(sub.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
