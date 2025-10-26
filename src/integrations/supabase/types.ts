@@ -107,6 +107,7 @@ export type Database = {
           created_at: string
           expert_id: string
           id: string
+          image_url: string | null
           title: string
         }
         Insert: {
@@ -114,6 +115,7 @@ export type Database = {
           created_at?: string
           expert_id: string
           id?: string
+          image_url?: string | null
           title: string
         }
         Update: {
@@ -121,6 +123,7 @@ export type Database = {
           created_at?: string
           expert_id?: string
           id?: string
+          image_url?: string | null
           title?: string
         }
         Relationships: [
@@ -164,26 +167,32 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_type: string | null
           created_at: string
           id: string
           message: string
           read: boolean | null
+          related_id: string | null
           type: string
           user_id: string
         }
         Insert: {
+          action_type?: string | null
           created_at?: string
           id?: string
           message: string
           read?: boolean | null
+          related_id?: string | null
           type: string
           user_id: string
         }
         Update: {
+          action_type?: string | null
           created_at?: string
           id?: string
           message?: string
           read?: boolean | null
+          related_id?: string | null
           type?: string
           user_id?: string
         }
@@ -268,22 +277,25 @@ export type Database = {
           created_at: string
           expert_id: string
           id: string
-          media_type: string
+          media_type: string | null
           media_url: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
           expert_id: string
           id?: string
-          media_type: string
+          media_type?: string | null
           media_url: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
           expert_id?: string
           id?: string
-          media_type?: string
+          media_type?: string | null
           media_url?: string
+          video_url?: string | null
         }
         Relationships: [
           {

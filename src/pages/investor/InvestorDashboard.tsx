@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Bell, Users, Search, LogOut, Heart, MessageCircle, X } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ImageUpload } from "@/components/ImageUpload";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -19,14 +20,13 @@ const InvestorDashboard = () => {
   const [investorProfile, setInvestorProfile] = useState<any>(null);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({ name: "", bio: "", investment_goal: "" });
+  const [profileData, setProfileData] = useState({ name: "", bio: "", investment_goal: "", image_url: "" });
   const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [replyTo, setReplyTo] = useState<Record<string, string | null>>({});
   const [comments, setComments] = useState<Record<string, any[]>>({});
   const [likes, setLikes] = useState<Record<string, number>>({});
-  const [showNotifications, setShowNotifications] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ const InvestorDashboard = () => {
     const notificationsChannel = supabase
       .channel('notifications-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
-        loadNotifications();
+        // Notifications handled by NotificationBell component
       })
       .subscribe();
 
@@ -87,11 +87,11 @@ const InvestorDashboard = () => {
         name: profileData.name,
         bio: profileData.bio || "",
         investment_goal: investorData?.investment_goal || "",
+        image_url: profileData.image_url || "",
       });
 
       await loadSubscriptions();
       await loadInsights();
-      await loadNotifications();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -150,23 +150,24 @@ const InvestorDashboard = () => {
       .from("comments")
       .select("*, profiles!comments_user_id_fkey(*)")
       .eq("insight_id", insightId)
+      .is("parent_comment_id", null)
       .order("created_at", { ascending: true });
 
-    setComments(prev => ({ ...prev, [insightId]: data || [] }));
-  };
-
-  const loadNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    setNotifications(data || []);
+    if (data) {
+      // Load replies for each comment
+      const commentsWithReplies = await Promise.all(
+        data.map(async (comment) => {
+          const { data: replies } = await supabase
+            .from("comments")
+            .select("*, profiles!comments_user_id_fkey(*)")
+            .eq("parent_comment_id", comment.id)
+            .order("created_at", { ascending: true });
+          
+          return { ...comment, replies: replies || [] };
+        })
+      );
+      setComments((prev) => ({ ...prev, [insightId]: commentsWithReplies }));
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -176,7 +177,7 @@ const InvestorDashboard = () => {
 
       await supabase
         .from("profiles")
-        .update({ name: profileData.name, bio: profileData.bio })
+        .update({ name: profileData.name, bio: profileData.bio, image_url: profileData.image_url })
         .eq("user_id", user.id);
 
       await supabase
@@ -192,12 +193,15 @@ const InvestorDashboard = () => {
     }
   };
 
-  const handleAddComment = async (insightId: string) => {
+  const handleAddComment = async (insightId: string, parentCommentId?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const content = newComment[insightId];
+      const content = parentCommentId 
+        ? newComment[`${insightId}-${parentCommentId}`]
+        : newComment[insightId];
+        
       if (!content) {
         toast.error("Please enter a comment");
         return;
@@ -207,10 +211,18 @@ const InvestorDashboard = () => {
         insight_id: insightId,
         user_id: user.id,
         content: content,
+        parent_comment_id: parentCommentId || null,
       });
 
-      toast.success("Comment added");
-      setNewComment({ ...newComment, [insightId]: "" });
+      toast.success(parentCommentId ? "Reply added" : "Comment added");
+      
+      if (parentCommentId) {
+        setNewComment({ ...newComment, [`${insightId}-${parentCommentId}`]: "" });
+        setReplyTo({ ...replyTo, [insightId]: null });
+      } else {
+        setNewComment({ ...newComment, [insightId]: "" });
+      }
+      
       loadComments(insightId);
     } catch (error: any) {
       toast.error(error.message);
@@ -224,13 +236,6 @@ const InvestorDashboard = () => {
     }));
   };
 
-  const markNotificationAsRead = async (notificationId: string) => {
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("id", notificationId);
-    loadNotifications();
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -269,17 +274,7 @@ const InvestorDashboard = () => {
                   Browse Experts
                 </Button>
               </Link>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative"
-                onClick={() => setShowNotifications(true)}
-              >
-                <Bell className="h-5 w-5" />
-                {notifications.some(n => !n.read) && (
-                  <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
-                )}
-              </Button>
+              <NotificationBell />
               <Button variant="ghost" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -331,6 +326,14 @@ const InvestorDashboard = () => {
                         <CardContent>
                           <p className="text-foreground mb-4">{insight.content}</p>
                           
+                          {insight.image_url && (
+                            <img
+                              src={insight.image_url}
+                              alt="Insight"
+                              className="w-full h-64 object-cover rounded-lg mb-4"
+                            />
+                          )}
+                          
                           <div className="flex items-center gap-4 mb-4 pt-2 border-t">
                             <Button 
                               variant="ghost" 
@@ -348,17 +351,70 @@ const InvestorDashboard = () => {
                           </div>
 
                           {comments[insight.id]?.length > 0 && (
-                            <div className="space-y-3 mb-4 p-3 bg-muted/30 rounded-lg">
+                            <div className="space-y-4 mb-4 p-4 bg-muted/30 rounded-lg">
                               {comments[insight.id].map((comment: any) => (
-                                <div key={comment.id} className="flex items-start space-x-2">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage src={comment.profiles?.image_url} />
-                                    <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium">{comment.profiles?.name}</p>
-                                    <p className="text-sm text-muted-foreground">{comment.content}</p>
+                                <div key={comment.id} className="space-y-2">
+                                  <div className="flex items-start space-x-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src={comment.profiles?.image_url} />
+                                      <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <div className="bg-card p-3 rounded-lg">
+                                        <p className="text-sm font-medium">{comment.profiles?.name}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs mt-1"
+                                        onClick={() => setReplyTo({ ...replyTo, [insight.id]: comment.id })}
+                                      >
+                                        Reply
+                                      </Button>
+                                    </div>
                                   </div>
+
+                                  {/* Replies */}
+                                  {comment.replies?.length > 0 && (
+                                    <div className="ml-10 space-y-2">
+                                      {comment.replies.map((reply: any) => (
+                                        <div key={reply.id} className="flex items-start space-x-2">
+                                          <Avatar className="h-6 w-6">
+                                            <AvatarImage src={reply.profiles?.image_url} />
+                                            <AvatarFallback>{reply.profiles?.name?.[0]}</AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex-1 bg-card p-2 rounded-lg">
+                                            <p className="text-xs font-medium">{reply.profiles?.name}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{reply.content}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Reply Input */}
+                                  {replyTo[insight.id] === comment.id && (
+                                    <div className="ml-10 flex gap-2 mt-2">
+                                      <Input
+                                        placeholder="Write a reply..."
+                                        value={newComment[`${insight.id}-${comment.id}`] || ""}
+                                        onChange={(e) =>
+                                          setNewComment({
+                                            ...newComment,
+                                            [`${insight.id}-${comment.id}`]: e.target.value,
+                                          })
+                                        }
+                                        className="text-sm"
+                                      />
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAddComment(insight.id, comment.id)}
+                                      >
+                                        <Send className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -372,7 +428,9 @@ const InvestorDashboard = () => {
                                 setNewComment({ ...newComment, [insight.id]: e.target.value })
                               }
                             />
-                            <Button onClick={() => handleAddComment(insight.id)}>Comment</Button>
+                            <Button onClick={() => handleAddComment(insight.id)}>
+                              <Send className="h-4 w-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -393,6 +451,15 @@ const InvestorDashboard = () => {
               <CardContent>
                 {editingProfile ? (
                   <div className="space-y-4">
+                    <ImageUpload
+                      bucket="profile-images"
+                      currentImageUrl={profileData.image_url}
+                      onUploadComplete={(url) =>
+                        setProfileData({ ...profileData, image_url: url })
+                      }
+                      isProfile
+                      label="Profile Picture"
+                    />
                     <div>
                       <Label>Name</Label>
                       <Input
@@ -500,36 +567,6 @@ const InvestorDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Notifications Sheet */}
-      <Sheet open={showNotifications} onOpenChange={setShowNotifications}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Notifications</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-3 mt-6">
-            {notifications.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No notifications</p>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-3 rounded-lg border ${
-                    notification.read ? 'bg-card' : 'bg-primary/5 border-primary/20'
-                  }`}
-                  onClick={() => !notification.read && markNotificationAsRead(notification.id)}
-                >
-                  <p className="text-sm font-medium">{notification.type}</p>
-                  <p className="text-sm text-muted-foreground">{notification.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(notification.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* Expert Detail Dialog */}
       {selectedExpert && (
