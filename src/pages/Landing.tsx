@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrendingUp, Users, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroDashboard from "@/assets/hero-dashboard.jpg";
+import { MarketCarousel } from "@/components/landing/MarketCarousel";
+import { ValueHighlights } from "@/components/landing/ValueHighlights";
+import { ExpertSection } from "@/components/landing/ExpertSection";
 
 const Landing = () => {
   return (
@@ -32,10 +35,16 @@ const Landing = () => {
       <section id="home" className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-sm font-medium text-primary mb-4 tracking-wide uppercase">
-              Connecting Experts & Investors
-            </p>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 max-w-4xl mx-auto leading-tight">
+            <div className="inline-block mb-6 animate-slide-up">
+              <Card className="card-shadow animate-pulse-glow border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                <CardContent className="px-8 py-4">
+                  <p className="text-lg font-semibold text-primary tracking-wide">
+                    Connect → Learn → Grow Smarter
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 max-w-4xl mx-auto leading-tight animate-fade-in">
               Smarter investing starts with expert guidance
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
@@ -111,6 +120,15 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Market Carousel */}
+      <MarketCarousel />
+
+      {/* Value Highlights */}
+      <ValueHighlights />
+
+      {/* Expert Section */}
+      <ExpertSection />
 
       {/* How It Works */}
       <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">

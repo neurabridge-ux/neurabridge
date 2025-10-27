@@ -85,25 +85,37 @@ export const ImageUpload = ({
       {previewUrl ? (
         <div className="relative inline-block">
           {isProfile ? (
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={previewUrl} alt="Preview" className="object-cover" />
-              <AvatarFallback>IMG</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={previewUrl} alt="Preview" className="object-cover" />
+                <AvatarFallback>IMG</AvatarFallback>
+              </Avatar>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={handleRemove}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           ) : (
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="h-40 w-full object-cover rounded-lg"
-            />
+            <div className="relative w-full">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="h-40 w-full object-cover rounded-lg"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={handleRemove}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           )}
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-            onClick={handleRemove}
-          >
-            <X className="h-3 w-3" />
-          </Button>
         </div>
       ) : (
         <div className="flex items-center gap-2">

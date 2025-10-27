@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -28,6 +28,8 @@ const InvestorDashboard = () => {
   const [comments, setComments] = useState<Record<string, any[]>>({});
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState<string>("");
 
   useEffect(() => {
     loadDashboardData();
@@ -236,6 +238,51 @@ const InvestorDashboard = () => {
     }));
   };
 
+  const handleEditComment = async (commentId: string, insightId: string, newContent: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (!newContent.trim()) {
+        toast.error("Comment cannot be empty");
+        return;
+      }
+
+      await supabase
+        .from("comments")
+        .update({ content: newContent })
+        .eq("id", commentId)
+        .eq("user_id", user.id);
+
+      toast.success("Comment updated");
+      loadComments(insightId);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string, insightId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (!confirm("Are you sure you want to delete this comment?")) {
+        return;
+      }
+
+      await supabase
+        .from("comments")
+        .delete()
+        .eq("id", commentId)
+        .eq("user_id", user.id);
+
+      toast.success("Comment deleted");
+      loadComments(insightId);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -356,22 +403,79 @@ const InvestorDashboard = () => {
                                 <div key={comment.id} className="space-y-2">
                                   <div className="flex items-start space-x-2">
                                     <Avatar className="h-8 w-8">
-                                      <AvatarImage src={comment.profiles?.image_url} />
+                                      <AvatarImage src={comment.profiles?.image_url} className="object-cover" />
                                       <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                      <div className="bg-card p-3 rounded-lg">
-                                        <p className="text-sm font-medium">{comment.profiles?.name}</p>
-                                        <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs mt-1"
-                                        onClick={() => setReplyTo({ ...replyTo, [insight.id]: comment.id })}
-                                      >
-                                        Reply
-                                      </Button>
+                                      {editingCommentId === comment.id ? (
+                                        <div className="space-y-2">
+                                          <Input
+                                            value={editCommentContent}
+                                            onChange={(e) => setEditCommentContent(e.target.value)}
+                                            className="text-sm"
+                                          />
+                                          <div className="flex gap-2">
+                                            <Button
+                                              size="sm"
+                                              onClick={() => {
+                                                handleEditComment(comment.id, insight.id, editCommentContent);
+                                                setEditingCommentId(null);
+                                              }}
+                                            >
+                                              Save
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => setEditingCommentId(null)}
+                                            >
+                                              Cancel
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="bg-card p-3 rounded-lg">
+                                            <div className="flex justify-between items-start">
+                                              <div className="flex-1">
+                                                <p className="text-sm font-medium">{comment.profiles?.name}</p>
+                                                <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
+                                              </div>
+                                              {comment.user_id === profile?.user_id && (
+                                                <div className="flex gap-1 ml-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0"
+                                                    onClick={() => {
+                                                      setEditingCommentId(comment.id);
+                                                      setEditCommentContent(comment.content);
+                                                    }}
+                                                  >
+                                                    <Edit2 className="h-3 w-3" />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0 text-destructive"
+                                                    onClick={() => handleDeleteComment(comment.id, insight.id)}
+                                                  >
+                                                    <Trash2 className="h-3 w-3" />
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-xs mt-1"
+                                            onClick={() => setReplyTo({ ...replyTo, [insight.id]: comment.id })}
+                                          >
+                                            Reply
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
 
@@ -381,12 +485,69 @@ const InvestorDashboard = () => {
                                       {comment.replies.map((reply: any) => (
                                         <div key={reply.id} className="flex items-start space-x-2">
                                           <Avatar className="h-6 w-6">
-                                            <AvatarImage src={reply.profiles?.image_url} />
+                                            <AvatarImage src={reply.profiles?.image_url} className="object-cover" />
                                             <AvatarFallback>{reply.profiles?.name?.[0]}</AvatarFallback>
                                           </Avatar>
-                                          <div className="flex-1 bg-card p-2 rounded-lg">
-                                            <p className="text-xs font-medium">{reply.profiles?.name}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">{reply.content}</p>
+                                          <div className="flex-1">
+                                            {editingCommentId === reply.id ? (
+                                              <div className="space-y-2">
+                                                <Input
+                                                  value={editCommentContent}
+                                                  onChange={(e) => setEditCommentContent(e.target.value)}
+                                                  className="text-sm"
+                                                />
+                                                <div className="flex gap-2">
+                                                  <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      handleEditComment(reply.id, insight.id, editCommentContent);
+                                                      setEditingCommentId(null);
+                                                    }}
+                                                  >
+                                                    Save
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setEditingCommentId(null)}
+                                                  >
+                                                    Cancel
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="bg-card p-2 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                  <div className="flex-1">
+                                                    <p className="text-xs font-medium">{reply.profiles?.name}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{reply.content}</p>
+                                                  </div>
+                                                  {reply.user_id === profile?.user_id && (
+                                                    <div className="flex gap-1 ml-2">
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-5 w-5 p-0"
+                                                        onClick={() => {
+                                                          setEditingCommentId(reply.id);
+                                                          setEditCommentContent(reply.content);
+                                                        }}
+                                                      >
+                                                        <Edit2 className="h-2 w-2" />
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-5 w-5 p-0 text-destructive"
+                                                        onClick={() => handleDeleteComment(reply.id, insight.id)}
+                                                      >
+                                                        <Trash2 className="h-2 w-2" />
+                                                      </Button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       ))}

@@ -65,7 +65,10 @@ export const NotificationBell = () => {
       .from("notifications")
       .update({ read: true })
       .eq("id", notificationId);
-    loadNotifications();
+    
+    // Remove from local state immediately
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
   const markAllAsRead = async () => {
@@ -78,15 +81,16 @@ export const NotificationBell = () => {
       .eq("user_id", user.id)
       .eq("read", false);
     
-    loadNotifications();
+    // Clear all notifications from local state
+    setNotifications([]);
+    setUnreadCount(0);
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.read) {
-      await markAsRead(notification.id);
-    }
+    // Mark as read and remove from list
+    await markAsRead(notification.id);
     // Navigate based on notification type if needed
-    setShowNotifications(false);
+    // setShowNotifications(false); // Keep open so user can see other notifications
   };
 
   return (
