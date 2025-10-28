@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Bell } from "lucide-react";
+import { Bell, Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -93,6 +94,20 @@ export const NotificationBell = () => {
     // setShowNotifications(false); // Keep open so user can see other notifications
   };
 
+  const handleSubscriptionRequest = async (requestId: string, action: "approved" | "declined") => {
+    try {
+      await supabase
+        .from("subscription_requests")
+        .update({ status: action })
+        .eq("id", requestId);
+
+      toast.success(`Request ${action === "approved" ? "accepted" : "declined"}`);
+      loadNotifications();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <>
       <Button
@@ -140,15 +155,17 @@ export const NotificationBell = () => {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 ${
+                    className={`p-3 rounded-lg border transition-colors ${
                       notification.read
                         ? "bg-card"
                         : "bg-primary/5 border-primary/20"
                     }`}
-                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => handleNotificationClick(notification)}
+                      >
                         <p className="text-sm font-medium truncate">
                           {notification.type}
                         </p>
@@ -163,6 +180,36 @@ export const NotificationBell = () => {
                         <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0 mt-1" />
                       )}
                     </div>
+
+                    {/* Accept/Decline buttons for subscription requests */}
+                    {notification.action_type === "subscription_request" && notification.related_id && (
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSubscriptionRequest(notification.related_id!, "approved");
+                          }}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSubscriptionRequest(notification.related_id!, "declined");
+                          }}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Decline
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

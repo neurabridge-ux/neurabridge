@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -352,8 +353,41 @@ const InvestorDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+        </header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="md:col-span-2 card-shadow">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            <Card className="card-shadow">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

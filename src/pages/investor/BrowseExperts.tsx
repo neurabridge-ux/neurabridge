@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const BrowseExperts = () => {
   const navigate = useNavigate();
@@ -22,6 +24,8 @@ const BrowseExperts = () => {
   const [expertTestimonials, setExpertTestimonials] = useState<any[]>([]);
   const [expertInsightsCount, setExpertInsightsCount] = useState<Record<string, number>>({});
   const [subscriberCounts, setSubscriberCounts] = useState<Record<string, number>>({});
+  const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
+  const [engagementData, setEngagementData] = useState<any[]>([]);
 
   useEffect(() => {
     loadExperts();
@@ -129,12 +133,30 @@ const BrowseExperts = () => {
     setSelectedExpert(expert);
 
     // Load testimonials
-    const { data } = await supabase
+    const { data: testimonialsData } = await supabase
       .from("testimonials")
       .select("*")
       .eq("expert_id", expert.user_id);
 
-    setExpertTestimonials(data || []);
+    setExpertTestimonials(testimonialsData || []);
+
+    // Load engagement data for chart
+    const { data: insightsData } = await supabase
+      .from("insights")
+      .select("*")
+      .eq("expert_id", expert.user_id)
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    if (insightsData) {
+      const engagement = insightsData.reverse().map((insight) => ({
+        title: insight.title.substring(0, 15) + "...",
+        views: insight.views_count || 0,
+        likes: insight.likes_count || 0,
+        comments: 0, // Would need to count from comments table
+      }));
+      setEngagementData(engagement);
+    }
   };
 
   const filteredExperts = experts.filter(expert =>
@@ -144,8 +166,36 @@ const BrowseExperts = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <Skeleton className="h-8 w-48" />
+          </div>
+        </header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="card-shadow mb-8">
+            <CardContent className="pt-6">
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="card-shadow">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -248,16 +298,16 @@ const BrowseExperts = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Subscription Fee</span>
                         <span className="font-semibold text-primary">
-                          {expertProfile?.subscription_fee === 0
+                          {expertProfile?.subscription_fee === 0 || expertProfile?.subscription_fee === null
                             ? "Free"
-                            : `$${expertProfile?.subscription_fee}`}
+                            : `$${expertProfile?.subscription_fee || 0}`}
                         </span>
                       </div>
                       {expertProfile?.subscription_fee > 0 && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-muted-foreground">Duration</span>
                           <span className="text-sm capitalize">
-                            {expertProfile?.subscription_duration}
+                            {expertProfile?.subscription_duration || "monthly"}
                           </span>
                         </div>
                       )}
@@ -283,13 +333,13 @@ const BrowseExperts = () => {
                             investor_id: currentUserId,
                             expert_id: expert.user_id,
                           });
-                          toast.success("Request sent to expert");
+                          toast.success("Enrolment request sent to expert");
                         } catch (error: any) {
                           toast.error(error.message);
                         }
                       }}
                     >
-                      Request Subscription
+                      Request Enrolment
                     </Button>
                   </CardContent>
                 </Card>
@@ -317,20 +367,41 @@ const BrowseExperts = () => {
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold">{selectedExpert.name}</h3>
                   <p className="text-muted-foreground mt-2">{selectedExpert.bio || "No bio available"}</p>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Insights: </span>
+                      <span className="font-medium">{expertInsightsCount[selectedExpert.user_id] || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Subscribers: </span>
+                      <span className="font-medium">{subscriberCounts[selectedExpert.user_id] || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Market: </span>
+                      <span className="font-medium">{selectedExpert.expert_profiles?.[0]?.market_category || "General"}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Frequency: </span>
+                      <span className="font-medium capitalize">{selectedExpert.expert_profiles?.[0]?.posting_frequency || "Weekly"}</span>
+                    </div>
+                  </div>
+
                   <div className="flex gap-3 mt-4">
                     <div>
                       <span className="text-sm text-muted-foreground">Subscription Fee: </span>
                       <span className="text-lg font-semibold text-primary">
-                        {selectedExpert.expert_profiles?.[0]?.subscription_fee === 0
+                        {selectedExpert.expert_profiles?.[0]?.subscription_fee === 0 || 
+                         selectedExpert.expert_profiles?.[0]?.subscription_fee === null
                           ? "Free"
-                          : `$${selectedExpert.expert_profiles?.[0]?.subscription_fee}`}
+                          : `$${selectedExpert.expert_profiles?.[0]?.subscription_fee || 0}`}
                       </span>
                     </div>
                     {selectedExpert.expert_profiles?.[0]?.subscription_fee > 0 && (
                       <div>
                         <span className="text-sm text-muted-foreground">/ </span>
                         <span className="text-sm capitalize">
-                          {selectedExpert.expert_profiles?.[0]?.subscription_duration}
+                          {selectedExpert.expert_profiles?.[0]?.subscription_duration || "monthly"}
                         </span>
                       </div>
                     )}
@@ -355,7 +426,11 @@ const BrowseExperts = () => {
                     <h4 className="font-semibold mb-4">Testimonials</h4>
                     <div className="grid md:grid-cols-3 gap-4">
                       {expertTestimonials.map((testimonial) => (
-                        <div key={testimonial.id} className="border rounded-lg overflow-hidden">
+                        <div 
+                          key={testimonial.id} 
+                          className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => setSelectedTestimonial(testimonial)}
+                        >
                           {testimonial.media_type === "image" ? (
                             <img 
                               src={testimonial.media_url} 
@@ -372,6 +447,59 @@ const BrowseExperts = () => {
                     </div>
                   </div>
                 </>
+              )}
+
+              {engagementData.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-4">Engagement Overview</h4>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={engagementData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="title" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="views" stroke="#3b82f6" name="Views" />
+                        <Line type="monotone" dataKey="likes" stroke="#f59e0b" name="Likes" />
+                        <Line type="monotone" dataKey="comments" stroke="#6b7280" name="Comments" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Testimonial Modal */}
+      {selectedTestimonial && (
+        <Dialog open={!!selectedTestimonial} onOpenChange={() => setSelectedTestimonial(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Testimonial</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedTestimonial.media_type === "image" ? (
+                <img 
+                  src={selectedTestimonial.media_url} 
+                  alt="Testimonial" 
+                  className="w-full h-auto rounded-lg"
+                />
+              ) : selectedTestimonial.video_url ? (
+                <div className="aspect-video">
+                  <iframe
+                    src={selectedTestimonial.video_url}
+                    className="w-full h-full rounded-lg"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div className="p-8 bg-muted rounded-lg">
+                  <p className="text-center">{selectedTestimonial.media_url}</p>
+                </div>
               )}
             </div>
           </DialogContent>

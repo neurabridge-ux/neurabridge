@@ -16,7 +16,8 @@ import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ViewType = "dashboard" | "content" | "subscribers" | "settings";
 
@@ -140,12 +141,18 @@ const ExpertDashboard = () => {
     }
 
     if (data && data.length > 0) {
-      const engagement = data.slice(0, 6).reverse().map((insight) => ({
-        title: insight.title.substring(0, 15) + "...",
-        comments: insight.comments?.[0]?.count || 0,
-        likes: insight.likes_count || 0,
-        views: insight.views_count || 0,
-      }));
+      const engagement = data.slice(0, 6).reverse().map((insight) => {
+        const views = insight.views_count || 0;
+        const likes = insight.likes_count || 0;
+        const commentCount = insight.comments?.[0]?.count || 0;
+        return {
+          title: insight.title.substring(0, 15) + "...",
+          comments: commentCount,
+          likes: likes,
+          views: views,
+          total: views + likes + commentCount,
+        };
+      });
       setEngagementData(engagement);
     }
   };
@@ -347,8 +354,55 @@ const ExpertDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background flex flex-col md:flex-row">
+        <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col">
+          <div className="p-6 border-b border-border">
+            <Skeleton className="h-8 w-full" />
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </nav>
+        </aside>
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border bg-card">
+            <div className="px-4 md:px-8 py-4">
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="card-shadow">
+                  <CardHeader>
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-8 w-16" />
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="card-shadow">
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-64 w-full" />
+                </CardContent>
+              </Card>
+              <Card className="card-shadow">
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-64 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -584,26 +638,34 @@ const ExpertDashboard = () => {
                             borderRadius: "6px",
                           }}
                         />
+                        <Legend />
                         <Line
                           type="monotone"
-                          dataKey="comments"
+                          dataKey="total"
                           stroke="hsl(var(--primary))"
+                          strokeWidth={3}
+                          name="Total Engagement"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="views"
+                          stroke="#3b82f6"
                           strokeWidth={2}
-                          name="Comments"
+                          name="Views"
                         />
                         <Line
                           type="monotone"
                           dataKey="likes"
-                          stroke="hsl(var(--secondary))"
+                          stroke="#f59e0b"
                           strokeWidth={2}
                           name="Likes"
                         />
                         <Line
                           type="monotone"
-                          dataKey="views"
-                          stroke="hsl(var(--accent-foreground))"
+                          dataKey="comments"
+                          stroke="#6b7280"
                           strokeWidth={2}
-                          name="Views"
+                          name="Comments"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -688,6 +750,8 @@ const ExpertDashboard = () => {
                                   <MessageCircle className="h-3 w-3 inline mr-1" />
                                   {insight.comments?.[0]?.count || 0} comments
                                 </span>
+                                <span>👁️ {insight.views_count || 0} views</span>
+                                <span>❤️ {insight.likes_count || 0} likes</span>
                                 <span>{new Date(insight.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>
