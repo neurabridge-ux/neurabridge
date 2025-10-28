@@ -35,9 +35,10 @@ const Landing = () => {
       <section id="home" className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-block mb-6 animate-slide-up">
-              <Card className="card-shadow animate-pulse-glow border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-                <CardContent className="px-8 py-4">
+            <div className="inline-block mb-6 animate-fade-in">
+              <Card className="card-shadow border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 animate-float">
+                <CardContent className="px-8 py-4 flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                   <p className="text-lg font-semibold text-primary tracking-wide">
                     Connect → Learn → Grow Smarter
                   </p>

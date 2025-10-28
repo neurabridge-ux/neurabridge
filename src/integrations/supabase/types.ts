@@ -67,6 +67,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          market_category: string | null
+          posting_frequency: string | null
           subscription_duration:
             | Database["public"]["Enums"]["subscription_duration"]
             | null
@@ -76,6 +78,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          market_category?: string | null
+          posting_frequency?: string | null
           subscription_duration?:
             | Database["public"]["Enums"]["subscription_duration"]
             | null
@@ -85,6 +89,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          market_category?: string | null
+          posting_frequency?: string | null
           subscription_duration?:
             | Database["public"]["Enums"]["subscription_duration"]
             | null
@@ -101,6 +107,35 @@ export type Database = {
           },
         ]
       }
+      insight_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          insight_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insight_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insight_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_likes_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insights: {
         Row: {
           content: string
@@ -108,7 +143,9 @@ export type Database = {
           expert_id: string
           id: string
           image_url: string | null
+          likes_count: number | null
           title: string
+          views_count: number | null
         }
         Insert: {
           content: string
@@ -116,7 +153,9 @@ export type Database = {
           expert_id: string
           id?: string
           image_url?: string | null
+          likes_count?: number | null
           title: string
+          views_count?: number | null
         }
         Update: {
           content?: string
@@ -124,7 +163,9 @@ export type Database = {
           expert_id?: string
           id?: string
           image_url?: string | null
+          likes_count?: number | null
           title?: string
+          views_count?: number | null
         }
         Relationships: [
           {
@@ -233,6 +274,30 @@ export type Database = {
           name?: string
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
+      subscription_requests: {
+        Row: {
+          created_at: string | null
+          expert_id: string
+          id: string
+          investor_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expert_id: string
+          id?: string
+          investor_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expert_id?: string
+          id?: string
+          investor_id?: string
+          status?: string | null
         }
         Relationships: []
       }

@@ -50,6 +50,16 @@ const markets = [
     title: "REITs",
     description: "Explore real estate investment insights",
   },
+  {
+    icon: TrendingUp,
+    title: "Mutual Funds",
+    description: "Discover expert fund managers and strategies",
+  },
+  {
+    icon: Package,
+    title: "Agro Commodities",
+    description: "Access agricultural commodity market insights",
+  },
 ];
 
 export const MarketCarousel = () => {

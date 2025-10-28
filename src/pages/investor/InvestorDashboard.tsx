@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2 } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -26,7 +26,8 @@ const InvestorDashboard = () => {
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [replyTo, setReplyTo] = useState<Record<string, string | null>>({});
   const [comments, setComments] = useState<Record<string, any[]>>({});
-  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [likes, setLikes] = useState<Record<string, boolean>>({});
+  const [views, setViews] = useState<Record<string, number>>({});
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState<string>("");
@@ -139,6 +140,37 @@ const InvestorDashboard = () => {
 
     setInsights(data || []);
 
+    // Track views and likes
+    if (data && user) {
+      const viewsData: Record<string, number> = {};
+      const likesData: Record<string, boolean> = {};
+      
+      for (const insight of data) {
+        viewsData[insight.id] = insight.views_count || 0;
+        
+        // Check if current user has liked this insight
+        const { data: likeData } = await supabase
+          .from("insight_likes")
+          .select("id")
+          .eq("insight_id", insight.id)
+          .eq("user_id", user.id)
+          .single();
+        
+        likesData[insight.id] = !!likeData;
+        
+        // Increment view count
+        await supabase
+          .from("insights")
+          .update({ views_count: (insight.views_count || 0) + 1 })
+          .eq("id", insight.id);
+        
+        viewsData[insight.id] = (insight.views_count || 0) + 1;
+      }
+      
+      setViews(viewsData);
+      setLikes(likesData);
+    }
+
     // Load comments for each insight
     if (data) {
       for (const insight of data) {
@@ -231,11 +263,36 @@ const InvestorDashboard = () => {
     }
   };
 
-  const handleLike = (insightId: string) => {
-    setLikes(prev => ({
-      ...prev,
-      [insightId]: (prev[insightId] || 0) + 1
-    }));
+  const handleLike = async (insightId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const isLiked = likes[insightId];
+
+      if (isLiked) {
+        // Unlike
+        await supabase
+          .from("insight_likes")
+          .delete()
+          .eq("insight_id", insightId)
+          .eq("user_id", user.id);
+
+        setLikes(prev => ({ ...prev, [insightId]: false }));
+      } else {
+        // Like
+        await supabase
+          .from("insight_likes")
+          .insert({ insight_id: insightId, user_id: user.id });
+
+        setLikes(prev => ({ ...prev, [insightId]: true }));
+      }
+      
+      // Reload insights to get updated like count
+      loadInsights();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   const handleEditComment = async (commentId: string, insightId: string, newContent: string) => {
@@ -357,10 +414,10 @@ const InvestorDashboard = () => {
                       >
                         <CardHeader>
                           <div className="flex items-center space-x-3 mb-2">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={insight.profiles?.image_url} />
-                              <AvatarFallback>{insight.profiles?.name?.[0]}</AvatarFallback>
-                            </Avatar>
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={insight.profiles?.image_url} className="object-cover" />
+                          <AvatarFallback>{insight.profiles?.name?.[0]}</AvatarFallback>
+                        </Avatar>
                             <div>
                               <p className="font-semibold">{insight.profiles?.name}</p>
                               <p className="text-xs text-muted-foreground">
@@ -389,12 +446,16 @@ const InvestorDashboard = () => {
                               className="gap-2"
                             >
                               <Heart className={`h-4 w-4 ${likes[insight.id] ? 'fill-red-500 text-red-500' : ''}`} />
-                              <span>{likes[insight.id] || 0}</span>
+                              <span>{insight.likes_count || 0}</span>
                             </Button>
                             <Button variant="ghost" size="sm" className="gap-2">
                               <MessageCircle className="h-4 w-4" />
                               <span>{comments[insight.id]?.length || 0}</span>
                             </Button>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Eye className="h-4 w-4" />
+                              <span>{views[insight.id] || insight.views_count || 0} views</span>
+                            </div>
                           </div>
 
                           {comments[insight.id]?.length > 0 && (

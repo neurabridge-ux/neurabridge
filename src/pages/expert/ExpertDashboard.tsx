@@ -143,6 +143,8 @@ const ExpertDashboard = () => {
       const engagement = data.slice(0, 6).reverse().map((insight) => ({
         title: insight.title.substring(0, 15) + "...",
         comments: insight.comments?.[0]?.count || 0,
+        likes: insight.likes_count || 0,
+        views: insight.views_count || 0,
       }));
       setEngagementData(engagement);
     }
@@ -560,7 +562,7 @@ const ExpertDashboard = () => {
                 <Card className="card-shadow">
                   <CardHeader>
                     <CardTitle>Investor Engagement</CardTitle>
-                    <CardDescription>Comments on your recent insights</CardDescription>
+                    <CardDescription>Engagement metrics for your recent insights</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
@@ -587,6 +589,21 @@ const ExpertDashboard = () => {
                           dataKey="comments"
                           stroke="hsl(var(--primary))"
                           strokeWidth={2}
+                          name="Comments"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="likes"
+                          stroke="hsl(var(--secondary))"
+                          strokeWidth={2}
+                          name="Likes"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="views"
+                          stroke="hsl(var(--accent-foreground))"
+                          strokeWidth={2}
+                          name="Views"
                         />
                       </LineChart>
                     </ResponsiveContainer>

@@ -20,6 +20,8 @@ const BrowseExperts = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
   const [expertTestimonials, setExpertTestimonials] = useState<any[]>([]);
+  const [expertInsightsCount, setExpertInsightsCount] = useState<Record<string, number>>({});
+  const [subscriberCounts, setSubscriberCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadExperts();
@@ -42,6 +44,30 @@ const BrowseExperts = () => {
         .eq("user_type", "expert");
 
       setExperts(expertsData || []);
+
+      // Load insights and subscriber counts for each expert
+      if (expertsData) {
+        const insightCounts: Record<string, number> = {};
+        const subCounts: Record<string, number> = {};
+        
+        for (const expert of expertsData) {
+          const { count: insightCount } = await supabase
+            .from("insights")
+            .select("*", { count: "exact", head: true })
+            .eq("expert_id", expert.user_id);
+          
+          const { count: subCount } = await supabase
+            .from("subscriptions")
+            .select("*", { count: "exact", head: true })
+            .eq("expert_id", expert.user_id);
+          
+          insightCounts[expert.user_id] = insightCount || 0;
+          subCounts[expert.user_id] = subCount || 0;
+        }
+        
+        setExpertInsightsCount(insightCounts);
+        setSubscriberCounts(subCounts);
+      }
 
       // Load current subscriptions
       const { data: subsData } = await supabase
@@ -199,7 +225,26 @@ const BrowseExperts = () => {
                       {expert.bio || "No bio available"}
                     </CardDescription>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Market</span>
+                        <span className="font-medium">{expert.expert_profiles?.[0]?.market_category || "General"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Insights Posted</span>
+                        <span className="font-medium">{expertInsightsCount[expert.user_id] || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Subscribers</span>
+                        <span className="font-medium">{subscriberCounts[expert.user_id] || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Posting Frequency</span>
+                        <span className="font-medium capitalize">{expert.expert_profiles?.[0]?.posting_frequency || "Weekly"}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Subscription Fee</span>
                         <span className="font-semibold text-primary">
@@ -227,6 +272,24 @@ const BrowseExperts = () => {
                       }}
                     >
                       {isSubscribed ? "Unsubscribe" : "Subscribe"}
+                    </Button>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await supabase.from("subscription_requests").insert({
+                            investor_id: currentUserId,
+                            expert_id: expert.user_id,
+                          });
+                          toast.success("Request sent to expert");
+                        } catch (error: any) {
+                          toast.error(error.message);
+                        }
+                      }}
+                    >
+                      Request Subscription
                     </Button>
                   </CardContent>
                 </Card>

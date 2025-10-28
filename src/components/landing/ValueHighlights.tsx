@@ -47,7 +47,7 @@ export const ValueHighlights = () => {
             return (
               <Card
                 key={index}
-                className="card-shadow hover:card-shadow-hover hover:scale-105 transition-all duration-500 animate-float group cursor-pointer"
+                className="card-shadow hover:card-shadow-hover hover:scale-105 transition-all duration-500 group cursor-pointer"
                 style={{ animationDelay: highlight.delay }}
               >
                 <CardContent className="p-6 text-center space-y-4">
