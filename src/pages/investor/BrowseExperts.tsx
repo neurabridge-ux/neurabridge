@@ -275,10 +275,14 @@ const BrowseExperts = () => {
                       {expert.bio || "No bio available"}
                     </CardDescription>
 
-                    <div className="space-y-2 text-sm">
+                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Market</span>
-                        <span className="font-medium">{expert.expert_profiles?.[0]?.market_category || "General"}</span>
+                        <span className="text-muted-foreground">Markets</span>
+                        <span className="font-medium">
+                          {Array.isArray(expert.expert_profiles?.[0]?.market_categories) && expert.expert_profiles[0].market_categories.length > 0
+                            ? expert.expert_profiles[0].market_categories.join(", ")
+                            : "General"}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Insights Posted</span>
@@ -378,8 +382,12 @@ const BrowseExperts = () => {
                       <span className="font-medium">{subscriberCounts[selectedExpert.user_id] || 0}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Market: </span>
-                      <span className="font-medium">{selectedExpert.expert_profiles?.[0]?.market_category || "General"}</span>
+                      <span className="text-muted-foreground">Markets: </span>
+                      <span className="font-medium">
+                        {Array.isArray(selectedExpert.expert_profiles?.[0]?.market_categories) && selectedExpert.expert_profiles[0].market_categories.length > 0
+                          ? selectedExpert.expert_profiles[0].market_categories.join(", ")
+                          : "General"}
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Frequency: </span>

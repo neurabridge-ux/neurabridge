@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   TrendingUp, LogOut, Users, FileText, Settings, DollarSign, BarChart3, 
-  LayoutDashboard, X, Edit2, MessageCircle, Send 
+  LayoutDashboard, X, Edit2, MessageCircle, Send, ShoppingBag, Trash2, Eye 
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -19,7 +19,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type ViewType = "dashboard" | "content" | "subscribers" | "settings";
+type ViewType = "dashboard" | "content" | "subscribers" | "settings" | "marketplace";
+
+const MARKET_OPTIONS = [
+  "Stocks", "Crypto", "Forex", "Bonds", "Commodities", "ETFs", 
+  "Indices", "REITs", "Mutual Funds", "Agro Commodities"
+];
 
 const ExpertDashboard = () => {
   const navigate = useNavigate();
@@ -41,6 +46,13 @@ const ExpertDashboard = () => {
   const [comments, setComments] = useState<Record<string, any[]>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [replyTo, setReplyTo] = useState<Record<string, string | null>>({});
+  const [marketplaceItems, setMarketplaceItems] = useState<any[]>([]);
+  const [newMarketplaceItem, setNewMarketplaceItem] = useState({
+    title: "", description: "", price: "", item_type: "Course", media_url: "", media_type: "image"
+  });
+  const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [marketCategories, setMarketCategories] = useState<string[]>([]);
+  const [expectations, setExpectations] = useState("");
 
   useEffect(() => {
     loadDashboardData();
@@ -83,10 +95,13 @@ const ExpertDashboard = () => {
         subscription_fee: expertData?.subscription_fee?.toString() || "0",
         subscription_duration: expertData?.subscription_duration || "monthly",
       });
+      setMarketCategories(expertData?.market_categories || []);
+      setExpectations(expertData?.expectations || "");
 
       await loadSubscribers();
       await loadInsights();
       await loadTestimonials();
+      await loadMarketplaceItems();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -192,6 +207,19 @@ const ExpertDashboard = () => {
       .order("created_at", { ascending: false });
 
     setTestimonials(data || []);
+  };
+
+  const loadMarketplaceItems = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("marketplace_items")
+      .select("*")
+      .eq("expert_id", user.id)
+      .order("created_at", { ascending: false });
+
+    setMarketplaceItems(data || []);
   };
 
   const handlePublishInsight = async () => {
@@ -335,11 +363,70 @@ const ExpertDashboard = () => {
         .update({
           subscription_fee: parseFloat(pricingData.subscription_fee),
           subscription_duration: pricingData.subscription_duration as any,
+          market_categories: marketCategories,
+          expectations: expectations,
         })
         .eq("user_id", user.id);
 
       toast.success("Profile updated successfully");
       loadDashboardData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleAddMarketplaceItem = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !newMarketplaceItem.title || !newMarketplaceItem.description) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      await supabase.from("marketplace_items").insert({
+        expert_id: user.id,
+        title: newMarketplaceItem.title,
+        description: newMarketplaceItem.description,
+        price: parseFloat(newMarketplaceItem.price) || 0,
+        item_type: newMarketplaceItem.item_type,
+        media_url: newMarketplaceItem.media_url || null,
+        media_type: newMarketplaceItem.media_type,
+      });
+
+      toast.success("Marketplace item added successfully");
+      setNewMarketplaceItem({
+        title: "", description: "", price: "", item_type: "Course", media_url: "", media_type: "image"
+      });
+      loadMarketplaceItems();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDeleteMarketplaceItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+    
+    await supabase.from("marketplace_items").delete().eq("id", itemId);
+    toast.success("Item deleted");
+    loadMarketplaceItems();
+  };
+
+  const handleUnsubscribe = async (subscriptionId: string, investorId: string) => {
+    if (!confirm("Are you sure you want to remove this subscriber?")) return;
+    
+    try {
+      await supabase.from("subscriptions").delete().eq("id", subscriptionId);
+      
+      // Notify investor
+      await supabase.from("notifications").insert({
+        user_id: investorId,
+        type: "Subscription Removed",
+        message: "You have been removed from an expert's subscriber list",
+        action_type: "unsubscribed",
+      });
+      
+      toast.success("Subscriber removed");
+      loadSubscribers();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -454,6 +541,14 @@ const ExpertDashboard = () => {
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
+          <Button
+            variant={currentView === "marketplace" ? "default" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => setCurrentView("marketplace")}
+          >
+            <ShoppingBag className="h-4 w-4 mr-2" />
+            Marketplace
+          </Button>
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -474,6 +569,7 @@ const ExpertDashboard = () => {
                 {currentView === "content" && "Content & Insights"}
                 {currentView === "subscribers" && "Subscribers"}
                 {currentView === "settings" && "Settings"}
+                {currentView === "marketplace" && "Marketplace"}
               </h2>
               <p className="text-sm text-muted-foreground">Welcome back, {profile?.name}</p>
             </div>
@@ -911,7 +1007,10 @@ const ExpertDashboard = () => {
                         key={sub.id}
                         className="flex items-center space-x-4 p-4 border border-border rounded-lg bg-muted/20"
                       >
-                        <Avatar className="h-12 w-12">
+                        <Avatar 
+                          className="h-12 w-12 cursor-pointer" 
+                          onClick={() => setSelectedInvestor(sub)}
+                        >
                           <AvatarImage src={sub.profiles?.image_url} className="object-cover" />
                           <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
                         </Avatar>
@@ -922,6 +1021,14 @@ const ExpertDashboard = () => {
                             Subscribed {new Date(sub.created_at).toLocaleDateString()}
                           </p>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnsubscribe(sub.id, sub.investor_id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -1005,6 +1112,55 @@ const ExpertDashboard = () => {
                       </select>
                     </div>
 
+                    <Separator />
+
+                    <div>
+                      <Label>Market Categories</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Select markets you operate in
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {MARKET_OPTIONS.map((market) => (
+                          <label
+                            key={market}
+                            className="flex items-center space-x-2 p-2 border rounded-md cursor-pointer hover:bg-muted/50 transition-smooth"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={marketCategories.includes(market)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setMarketCategories([...marketCategories, market]);
+                                } else {
+                                  setMarketCategories(marketCategories.filter(m => m !== market));
+                                }
+                              }}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm">{market}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>What Investors Can Expect</Label>
+                      <Textarea
+                        value={expectations}
+                        onChange={(e) => {
+                          if (e.target.value.length <= 300) {
+                            setExpectations(e.target.value);
+                          }
+                        }}
+                        rows={3}
+                        maxLength={300}
+                        placeholder="Describe what investors can expect from your insights..."
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {expectations.length}/300 characters
+                      </p>
+                    </div>
+
                     <Button onClick={handleUpdateProfile}>Save Changes</Button>
                   </div>
                 </CardContent>
@@ -1048,10 +1204,11 @@ const ExpertDashboard = () => {
                               className="relative group cursor-pointer"
                               onClick={() => setSelectedTestimonial(testimonial)}
                             >
-                              {testimonial.video_url ? (
-                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                                  <p className="text-xs text-muted-foreground px-2 text-center">
-                                    Video Link
+                           {testimonial.video_url ? (
+                                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative">
+                                  <Eye className="h-8 w-8 text-primary" />
+                                  <p className="absolute bottom-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                                    Video
                                   </p>
                                 </div>
                               ) : (
@@ -1080,6 +1237,127 @@ const ExpertDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {/* Marketplace View */}
+          {currentView === "marketplace" && (
+            <div className="space-y-6">
+              <Card className="card-shadow">
+                <CardHeader>
+                  <CardTitle>Add Marketplace Item</CardTitle>
+                  <CardDescription>Share courses, trainings, services, or opportunities</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Title</Label>
+                      <Input
+                        value={newMarketplaceItem.title}
+                        onChange={(e) =>
+                          setNewMarketplaceItem({ ...newMarketplaceItem, title: e.target.value })
+                        }
+                        placeholder="e.g., Advanced Trading Course"
+                      />
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={newMarketplaceItem.description}
+                        onChange={(e) =>
+                          setNewMarketplaceItem({ ...newMarketplaceItem, description: e.target.value })
+                        }
+                        rows={3}
+                        placeholder="Describe your offering..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Price ($)</Label>
+                        <Input
+                          type="number"
+                          value={newMarketplaceItem.price}
+                          onChange={(e) =>
+                            setNewMarketplaceItem({ ...newMarketplaceItem, price: e.target.value })
+                          }
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={newMarketplaceItem.item_type}
+                          onChange={(e) =>
+                            setNewMarketplaceItem({ ...newMarketplaceItem, item_type: e.target.value })
+                          }
+                        >
+                          <option value="Course">Course</option>
+                          <option value="Training">Training</option>
+                          <option value="Service">Service</option>
+                          <option value="Opportunity">Opportunity</option>
+                        </select>
+                      </div>
+                    </div>
+                    <ImageUpload
+                      bucket="insight-images"
+                      currentImageUrl={newMarketplaceItem.media_url}
+                      onUploadComplete={(url) =>
+                        setNewMarketplaceItem({ ...newMarketplaceItem, media_url: url, media_type: "image" })
+                      }
+                      label="Upload Image or Video"
+                    />
+                    <Button onClick={handleAddMarketplaceItem}>
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Add to Marketplace
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {marketplaceItems.length > 0 && (
+                <Card className="card-shadow">
+                  <CardHeader>
+                    <CardTitle>Your Marketplace Items</CardTitle>
+                    <CardDescription>{marketplaceItems.length} items listed</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {marketplaceItems.map((item) => (
+                        <Card key={item.id} className="border">
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="text-lg">{item.title}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">{item.item_type}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteMarketplaceItem(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {item.media_url && (
+                              <img
+                                src={item.media_url}
+                                alt={item.title}
+                                className="w-full h-32 object-cover rounded-md mb-3"
+                              />
+                            )}
+                            <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                            <p className="text-lg font-bold text-primary">${item.price}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </main>
@@ -1154,6 +1432,59 @@ const ExpertDashboard = () => {
                   className="w-full h-auto rounded-lg"
                 />
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Investor Detail Dialog */}
+      {selectedInvestor && (
+        <Dialog open={!!selectedInvestor} onOpenChange={() => setSelectedInvestor(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Investor Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={selectedInvestor.profiles?.image_url} className="object-cover" />
+                  <AvatarFallback className="text-2xl">
+                    {selectedInvestor.profiles?.name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-2xl font-bold">{selectedInvestor.profiles?.name}</h3>
+                  <p className="text-muted-foreground">{selectedInvestor.profiles?.bio}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Subscribed Date</Label>
+                  <p className="font-medium">{new Date(selectedInvestor.created_at).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Status</Label>
+                  <p className="font-medium text-green-600">Active Subscriber</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    handleUnsubscribe(selectedInvestor.id, selectedInvestor.investor_id);
+                    setSelectedInvestor(null);
+                  }}
+                >
+                  Remove Subscriber
+                </Button>
+                <Button variant="outline" onClick={() => setSelectedInvestor(null)}>
+                  Close
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
