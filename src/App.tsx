@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import ExpertDashboard from "./pages/expert/ExpertDashboard";
 import InvestorDashboard from "./pages/investor/InvestorDashboard";
 import BrowseExperts from "./pages/investor/BrowseExperts";
+import Marketplace from "./pages/Marketplace";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/expert/dashboard" element={<ExpertDashboard />} />
           <Route path="/investor/dashboard" element={<InvestorDashboard />} />
           <Route path="/investor/browse" element={<BrowseExperts />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -66,8 +66,9 @@ export type Database = {
       expert_profiles: {
         Row: {
           created_at: string
+          expectations: string | null
           id: string
-          market_category: string | null
+          market_categories: string[] | null
           posting_frequency: string | null
           subscription_duration:
             | Database["public"]["Enums"]["subscription_duration"]
@@ -77,8 +78,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expectations?: string | null
           id?: string
-          market_category?: string | null
+          market_categories?: string[] | null
           posting_frequency?: string | null
           subscription_duration?:
             | Database["public"]["Enums"]["subscription_duration"]
@@ -88,8 +90,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expectations?: string | null
           id?: string
-          market_category?: string | null
+          market_categories?: string[] | null
           posting_frequency?: string | null
           subscription_duration?:
             | Database["public"]["Enums"]["subscription_duration"]
@@ -205,6 +208,45 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      marketplace_items: {
+        Row: {
+          created_at: string
+          description: string
+          expert_id: string
+          id: string
+          item_type: string
+          media_type: string | null
+          media_url: string | null
+          price: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          expert_id: string
+          id?: string
+          item_type: string
+          media_type?: string | null
+          media_url?: string | null
+          price?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          expert_id?: string
+          id?: string
+          item_type?: string
+          media_type?: string | null
+          media_url?: string | null
+          price?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {

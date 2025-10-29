@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye, ShoppingBag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -406,6 +406,12 @@ const InvestorDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/marketplace">
+                <Button variant="outline">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Marketplace
+                </Button>
+              </Link>
               <Link to="/investor/browse">
                 <Button variant="outline">
                   <Search className="h-4 w-4 mr-2" />
