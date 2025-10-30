@@ -15,7 +15,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-primary" />
+              <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-10 w-auto" />
               <span className="ml-2 text-xl font-bold text-foreground">NeuraBridge</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">

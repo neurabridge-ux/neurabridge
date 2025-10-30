@@ -18,6 +18,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ViewType = "dashboard" | "content" | "subscribers" | "settings" | "marketplace";
 
@@ -418,10 +419,16 @@ const ExpertDashboard = () => {
       await supabase.from("subscriptions").delete().eq("id", subscriptionId);
       
       // Notify investor
+      const { data: expertData } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", profile?.user_id)
+        .single();
+
       await supabase.from("notifications").insert({
         user_id: investorId,
         type: "Subscription Removed",
-        message: "You have been removed from an expert's subscriber list",
+        message: `You have been removed from ${expertData?.name || 'an expert'}'s subscription list`,
         action_type: "unsubscribed",
       });
       
@@ -500,7 +507,7 @@ const ExpertDashboard = () => {
       <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col">
         <div className="p-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <TrendingUp className="h-8 w-8 text-primary" />
+            <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-8 w-auto" />
             <div>
               <h1 className="text-xl font-bold">NeuraBridge</h1>
               <p className="text-xs text-muted-foreground">Expert Portal</p>
@@ -1323,38 +1330,40 @@ const ExpertDashboard = () => {
                     <CardDescription>{marketplaceItems.length} items listed</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {marketplaceItems.map((item) => (
-                        <Card key={item.id} className="border">
-                          <CardHeader>
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <CardTitle className="text-lg">{item.title}</CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">{item.item_type}</p>
+                    <ScrollArea className="h-[600px] pr-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {marketplaceItems.map((item) => (
+                          <Card key={item.id} className="border">
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <CardTitle className="text-lg">{item.title}</CardTitle>
+                                  <p className="text-sm text-muted-foreground mt-1">{item.item_type}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteMarketplaceItem(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteMarketplaceItem(item.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            {item.media_url && (
-                              <img
-                                src={item.media_url}
-                                alt={item.title}
-                                className="w-full h-32 object-cover rounded-md mb-3"
-                              />
-                            )}
-                            <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                            <p className="text-lg font-bold text-primary">${item.price}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                            </CardHeader>
+                            <CardContent>
+                              {item.media_url && (
+                                <img
+                                  src={item.media_url}
+                                  alt={item.title}
+                                  className="w-full h-32 object-cover rounded-md mb-3"
+                                />
+                              )}
+                              <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                              <p className="text-lg font-bold text-primary">${item.price}</p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </CardContent>
                 </Card>
               )}

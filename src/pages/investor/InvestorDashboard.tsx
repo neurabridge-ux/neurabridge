@@ -399,7 +399,7 @@ const InvestorDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <TrendingUp className="h-8 w-8 text-primary" />
+              <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-8 w-auto" />
               <div>
                 <h1 className="text-2xl font-bold">Investor Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Welcome back, {profile?.name}</p>
@@ -807,17 +807,24 @@ const InvestorDashboard = () => {
                     {filteredSubscriptions.map((sub) => (
                       <div 
                         key={sub.id} 
-                        className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-smooth"
+                        className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-smooth border border-border"
                         onClick={() => setSelectedExpert(sub)}
                       >
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-12 w-12">
                           <AvatarImage src={sub.profiles?.image_url} />
                           <AvatarFallback>{sub.profiles?.name?.[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm">{sub.profiles?.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            ${sub.expert_profiles?.subscription_fee}/{sub.expert_profiles?.subscription_duration}
+                          <p className="text-xs text-muted-foreground truncate">
+                            {Array.isArray(sub.expert_profiles?.market_categories) && sub.expert_profiles.market_categories.length > 0
+                              ? sub.expert_profiles.market_categories.join(", ")
+                              : "General Markets"}
+                          </p>
+                          <p className="text-xs font-medium text-primary mt-1">
+                            {sub.expert_profiles?.subscription_fee === 0 || sub.expert_profiles?.subscription_fee === null
+                              ? "Free"
+                              : `$${sub.expert_profiles?.subscription_fee}/${sub.expert_profiles?.subscription_duration}`}
                           </p>
                         </div>
                       </div>
@@ -833,28 +840,63 @@ const InvestorDashboard = () => {
       {/* Expert Detail Dialog */}
       {selectedExpert && (
         <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Expert Profile</DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
-                <Avatar className="h-20 w-20">
+                <Avatar className="h-24 w-24">
                   <AvatarImage src={selectedExpert.profiles?.image_url} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback className="text-3xl">
                     {selectedExpert.profiles?.name?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold">{selectedExpert.profiles?.name}</h3>
-                  <p className="text-muted-foreground mt-1">{selectedExpert.profiles?.bio}</p>
-                  <div className="flex gap-2 mt-3">
-                    <span className="text-sm font-semibold text-primary">
-                      ${selectedExpert.expert_profiles?.subscription_fee}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      / {selectedExpert.expert_profiles?.subscription_duration}
-                    </span>
+                  <p className="text-muted-foreground mt-2">{selectedExpert.profiles?.bio || "No bio available"}</p>
+                  
+                  <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Markets</Label>
+                      <p className="font-medium">
+                        {Array.isArray(selectedExpert.expert_profiles?.market_categories) && selectedExpert.expert_profiles.market_categories.length > 0
+                          ? selectedExpert.expert_profiles.market_categories.join(", ")
+                          : "General"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Posting Frequency</Label>
+                      <p className="font-medium capitalize">{selectedExpert.expert_profiles?.posting_frequency || "Weekly"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-4 items-center">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Subscription</Label>
+                      <p className="text-lg font-semibold text-primary">
+                        {selectedExpert.expert_profiles?.subscription_fee === 0 || selectedExpert.expert_profiles?.subscription_fee === null
+                          ? "Free"
+                          : `$${selectedExpert.expert_profiles?.subscription_fee} / ${selectedExpert.expert_profiles?.subscription_duration}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedExpert.expert_profiles?.expectations && (
+                    <div className="mt-4 p-3 bg-muted rounded-lg">
+                      <Label className="text-xs text-muted-foreground">What to Expect</Label>
+                      <p className="text-sm mt-1">{selectedExpert.expert_profiles.expectations}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={() => navigate(`/marketplace?expert=${selectedExpert.profiles?.user_id}`)}>
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      View Marketplace
+                    </Button>
+                    <Button variant="outline" onClick={() => setSelectedExpert(null)}>
+                      Close
+                    </Button>
                   </div>
                 </div>
               </div>

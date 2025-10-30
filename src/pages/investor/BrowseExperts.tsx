@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Search, ArrowLeft } from "lucide-react";
+import { TrendingUp, Search, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -317,33 +317,44 @@ const BrowseExperts = () => {
                       )}
                     </div>
 
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant={isSubscribed ? "outline" : "default"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSubscribe(expert.user_id);
+                        }}
+                      >
+                        {isSubscribed ? "Unsubscribe" : "Subscribe"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await supabase.from("subscription_requests").insert({
+                              investor_id: currentUserId,
+                              expert_id: expert.user_id,
+                            });
+                            toast.success("Enrolment request sent to expert");
+                          } catch (error: any) {
+                            toast.error(error.message);
+                          }
+                        }}
+                      >
+                        Request Enrolment
+                      </Button>
+                    </div>
                     <Button
                       className="w-full"
-                      variant={isSubscribed ? "outline" : "default"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSubscribe(expert.user_id);
-                      }}
-                    >
-                      {isSubscribed ? "Unsubscribe" : "Subscribe"}
-                    </Button>
-                    <Button
-                      className="w-full"
-                      variant="outline"
+                      variant="secondary"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        try {
-                          await supabase.from("subscription_requests").insert({
-                            investor_id: currentUserId,
-                            expert_id: expert.user_id,
-                          });
-                          toast.success("Enrolment request sent to expert");
-                        } catch (error: any) {
-                          toast.error(error.message);
-                        }
+                        navigate(`/marketplace?expert=${expert.user_id}`);
                       }}
                     >
-                      Request Enrolment
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      View Marketplace
                     </Button>
                   </CardContent>
                 </Card>

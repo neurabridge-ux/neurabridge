@@ -228,9 +228,17 @@ const Marketplace = () => {
                 <p className="text-muted-foreground">{selectedItem.description}</p>
               </div>
 
-              <Button className="w-full" size="lg">
-                Contact Expert
-              </Button>
+              <div className="flex gap-3">
+                <Button className="flex-1" size="lg" variant="default">
+                  {selectedItem.item_type === "Course" && "Get Course"}
+                  {selectedItem.item_type === "Training" && "Get Training"}
+                  {selectedItem.item_type === "Service" && "Get Service"}
+                  {selectedItem.item_type === "Opportunity" && "Get Opportunity"}
+                </Button>
+                <Button className="flex-1" size="lg" variant="outline">
+                  Contact Expert
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

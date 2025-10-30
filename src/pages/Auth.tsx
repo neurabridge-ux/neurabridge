@@ -49,7 +49,14 @@ const Auth = () => {
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("Email not confirmed")) {
+            toast.error("Please verify your email before logging in. Check your inbox for the verification link.", {
+              duration: 6000,
+            });
+          }
+          throw error;
+        }
 
         // Get user type and redirect
         const { data: profile } = await supabase
@@ -88,8 +95,10 @@ const Auth = () => {
             });
           }
 
-          toast.success("Account created successfully!");
-          navigate(userType === "expert" ? "/expert/dashboard" : "/investor/dashboard");
+          toast.success("Account created! Please check your email to verify your account before logging in.", {
+            duration: 6000,
+          });
+          setIsLogin(true);
         }
       }
     } catch (error: any) {
@@ -103,7 +112,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
-          <TrendingUp className="h-10 w-10 text-primary" />
+          <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-12 w-auto" />
           <span className="ml-2 text-2xl font-bold">NeuraBridge</span>
         </div>
 
