@@ -36,7 +36,7 @@ const ExpertDashboard = () => {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [newInsight, setNewInsight] = useState({ title: "", content: "", image_url: "", visibility: "subscribers" });
+  const [newInsight, setNewInsight] = useState({ title: "", content: "", image_url: "" });
   const [editingInsight, setEditingInsight] = useState<any>(null);
   const [newTestimonial, setNewTestimonial] = useState({ media_url: "", media_type: "image", video_url: "" });
   const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
@@ -239,7 +239,7 @@ const ExpertDashboard = () => {
       });
 
       toast.success("Insight published successfully");
-      setNewInsight({ title: "", content: "", image_url: "", visibility: "subscribers" });
+      setNewInsight({ title: "", content: "", image_url: "" });
       loadInsights();
     } catch (error: any) {
       toast.error(error.message);
@@ -785,26 +785,10 @@ const ExpertDashboard = () => {
               <Card className="card-shadow">
                 <CardHeader>
                   <CardTitle>Publish New Insight</CardTitle>
-                  <CardDescription>Share your expertise with your audience</CardDescription>
+                  <CardDescription>Share your expertise with subscribers</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div>
-                      <Label>Post Visibility</Label>
-                      <select
-                        value={newInsight.visibility}
-                        onChange={(e) => setNewInsight({ ...newInsight, visibility: e.target.value })}
-                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <option value="subscribers">Subscribers Only</option>
-                        <option value="public">Public Feed</option>
-                      </select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {newInsight.visibility === "public" 
-                          ? "This insight will be visible to everyone on the public feed"
-                          : "This insight will only be visible to your subscribers"}
-                      </p>
-                    </div>
                     <div>
                       <Label>Title</Label>
                       <Input
@@ -830,9 +814,7 @@ const ExpertDashboard = () => {
                       onUploadComplete={(url) => setNewInsight({ ...newInsight, image_url: url })}
                       label="Optional Image"
                     />
-                    <Button onClick={handlePublishInsight} className="w-full">
-                      Publish Insight
-                    </Button>
+                    <Button onClick={handlePublishInsight}>Publish Insight</Button>
                   </div>
                 </CardContent>
               </Card>

@@ -149,7 +149,6 @@ export type Database = {
           likes_count: number | null
           title: string
           views_count: number | null
-          visibility: string
         }
         Insert: {
           content: string
@@ -160,7 +159,6 @@ export type Database = {
           likes_count?: number | null
           title: string
           views_count?: number | null
-          visibility?: string
         }
         Update: {
           content?: string
@@ -171,7 +169,6 @@ export type Database = {
           likes_count?: number | null
           title?: string
           views_count?: number | null
-          visibility?: string
         }
         Relationships: [
           {
