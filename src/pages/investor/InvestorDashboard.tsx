@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye, ShoppingBag } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye, ShoppingBag, Globe } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PublicInsightsCarousel } from "@/components/PublicInsightsCarousel";
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -409,19 +410,25 @@ const InvestorDashboard = () => {
               <Link to="/marketplace">
                 <Button variant="outline">
                   <ShoppingBag className="h-4 w-4 mr-2" />
-                  Marketplace
+                  <span className="hidden sm:inline">Marketplace</span>
+                </Button>
+              </Link>
+              <Link to="/public-feed">
+                <Button variant="outline">
+                  <Globe className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Public Feed</span>
                 </Button>
               </Link>
               <Link to="/investor/browse">
                 <Button variant="outline">
                   <Search className="h-4 w-4 mr-2" />
-                  Browse Experts
+                  <span className="hidden sm:inline">Browse Experts</span>
                 </Button>
               </Link>
               <NotificationBell />
               <Button variant="ghost" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -429,9 +436,12 @@ const InvestorDashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
+        {/* Public Insights Carousel */}
+        <PublicInsightsCarousel />
+
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Feed */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <Card className="card-shadow">
               <CardHeader>
                 <CardTitle>Your Insights Feed</CardTitle>
