@@ -33,6 +33,8 @@ const InvestorDashboard = () => {
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState<string>("");
+  const [publicInsights, setPublicInsights] = useState<any[]>([]);
+  const [selectedInsight, setSelectedInsight] = useState<any>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -97,6 +99,7 @@ const InvestorDashboard = () => {
 
       await loadSubscriptions();
       await loadInsights();
+      await loadPublicInsights();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -178,6 +181,21 @@ const InvestorDashboard = () => {
       for (const insight of data) {
         loadComments(insight.id);
       }
+    }
+  };
+
+  const loadPublicInsights = async () => {
+    try {
+      const { data } = await supabase
+        .from("insights")
+        .select("*, profiles!insights_expert_id_fkey(*)")
+        .eq("visibility", "public")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      setPublicInsights((data as any) || []);
+    } catch (error) {
+      console.error("Error loading public insights:", error);
     }
   };
 

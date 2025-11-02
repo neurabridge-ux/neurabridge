@@ -11,6 +11,7 @@ import {
   TrendingUp, LogOut, Users, FileText, Settings, DollarSign, BarChart3, 
   LayoutDashboard, X, Edit2, MessageCircle, Send, ShoppingBag, Trash2, Eye 
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -37,7 +38,7 @@ const ExpertDashboard = () => {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [newInsight, setNewInsight] = useState({ title: "", content: "", image_url: "" });
+  const [newInsight, setNewInsight] = useState({ title: "", content: "", image_url: "", visibility: "subscribers" });
   const [editingInsight, setEditingInsight] = useState<any>(null);
   const [newTestimonial, setNewTestimonial] = useState({ media_url: "", media_type: "image", video_url: "" });
   const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
@@ -237,10 +238,11 @@ const ExpertDashboard = () => {
         title: newInsight.title,
         content: newInsight.content,
         image_url: newInsight.image_url || null,
+        visibility: newInsight.visibility,
       });
 
       toast.success("Insight published successfully");
-      setNewInsight({ title: "", content: "", image_url: "" });
+      setNewInsight({ title: "", content: "", image_url: "", visibility: "subscribers" });
       loadInsights();
     } catch (error: any) {
       toast.error(error.message);
@@ -815,7 +817,20 @@ const ExpertDashboard = () => {
                       onUploadComplete={(url) => setNewInsight({ ...newInsight, image_url: url })}
                       label="Optional Image"
                     />
-                    <Button onClick={handlePublishInsight}>Publish Insight</Button>
+                    <div>
+                      <Label>Visibility</Label>
+                      <select
+                        value={newInsight.visibility}
+                        onChange={(e) => setNewInsight({ ...newInsight, visibility: e.target.value })}
+                        className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                      >
+                        <option value="subscribers">Subscribers Only</option>
+                        <option value="public">Public</option>
+                      </select>
+                    </div>
+                    <Button onClick={handlePublishInsight} className="bg-gradient-to-r from-primary to-accent">
+                      Publish Insight
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -838,7 +853,12 @@ const ExpertDashboard = () => {
                         >
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-lg">{insight.title}</h3>
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-lg">{insight.title}</h3>
+                                {insight.visibility === 'public' && (
+                                  <Badge className="bg-primary/90 text-primary-foreground">Public</Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground mt-2">
                                 {insight.content}
                               </p>

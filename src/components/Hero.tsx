@@ -46,7 +46,7 @@ const Hero = () => {
                   <TrendingUp className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Global Network</h3>
+                  <h3 className="font-semibold text-lg">Experts + Investors</h3>
                   <p className="text-sm text-muted-foreground">
                     Connected Worldwide
                   </p>
