@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/ui/skeleton";
+import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -399,7 +400,7 @@ const InvestorDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-8 w-auto" />
+              <img src={neuraBridgeLogo} alt="NeuraBridge" className="h-8 w-auto" />
               <div>
                 <h1 className="text-2xl font-bold">Investor Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Welcome back, {profile?.name}</p>

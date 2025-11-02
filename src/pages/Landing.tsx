@@ -2,73 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroDashboard from "@/assets/hero-dashboard.jpg";
 import { MarketCarousel } from "@/components/landing/MarketCarousel";
 import { ValueHighlights } from "@/components/landing/ValueHighlights";
 import { ExpertSection } from "@/components/landing/ExpertSection";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
 
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-background/95 backdrop-blur-sm border-b border-border z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-10 w-auto" />
-              <span className="ml-2 text-xl font-bold text-foreground">NeuraBridge</span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="text-foreground hover:text-primary transition-smooth">Home</a>
-              <a href="#how-it-works" className="text-foreground hover:text-primary transition-smooth">How It Works</a>
-              <a href="#experts" className="text-foreground hover:text-primary transition-smooth">Experts</a>
-              <Link to="/auth" className="text-foreground hover:text-primary transition-smooth">Login</Link>
-              <Link to="/auth">
-                <Button variant="default">Join Now</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section id="home" className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-block mb-6 animate-fade-in">
-              <Card className="card-shadow border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 animate-float">
-                <CardContent className="px-8 py-4 flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  <p className="text-lg font-semibold text-primary tracking-wide">
-                    Connect → Learn → Grow Smarter
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 max-w-4xl mx-auto leading-tight animate-fade-in">
-              Smarter investing starts with expert guidance
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              A simple platform where investors can discover, connect, and gain insights from experts wherever they might be.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link to="/auth?type=investor">
-                <Button size="lg" className="w-full sm:w-auto">Join as Investor</Button>
-              </Link>
-              <Link to="/auth?type=expert">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">Join as Expert</Button>
-              </Link>
-            </div>
-            <div className="rounded-xl overflow-hidden card-shadow max-w-5xl mx-auto">
-              <img 
-                src={heroDashboard} 
-                alt="Investment dashboard preview" 
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      <Navbar />
+      <Hero />
 
       {/* Built for Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">

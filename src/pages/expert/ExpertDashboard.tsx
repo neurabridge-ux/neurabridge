@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
 type ViewType = "dashboard" | "content" | "subscribers" | "settings" | "marketplace";
 
@@ -507,7 +508,7 @@ const ExpertDashboard = () => {
       <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col">
         <div className="p-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-8 w-auto" />
+            <img src={neuraBridgeLogo} alt="NeuraBridge" className="h-8 w-auto" />
             <div>
               <h1 className="text-xl font-bold">NeuraBridge</h1>
               <p className="text-xs text-muted-foreground">Expert Portal</p>

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp } from "lucide-react";
+import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -112,7 +113,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
-          <img src="/neurabridge-logo.png" alt="NeuraBridge" className="h-12 w-auto" />
+          <img src={neuraBridgeLogo} alt="NeuraBridge" className="h-12 w-auto" />
           <span className="ml-2 text-2xl font-bold">NeuraBridge</span>
         </div>
 
