@@ -3,75 +3,60 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { TrendingUp, Bitcoin, DollarSign, FileText, Package, LineChart, BarChart3, Building } from "lucide-react";
+import { Bitcoin, DollarSign, FileText, Package, LineChart, BarChart3, TrendingUp, Wheat, Activity } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 
 const markets = [
   {
-    icon: TrendingUp,
-    title: "Stocks",
-    description: "Connect with expert equity analysts and traders",
-  },
-  {
     icon: Bitcoin,
     title: "Crypto",
-    description: "Discover top-performing crypto analysts",
   },
   {
     icon: DollarSign,
     title: "Forex",
-    description: "Learn from experienced currency traders",
-  },
-  {
-    icon: FileText,
-    title: "Bonds",
-    description: "Get insights from fixed-income specialists",
-  },
-  {
-    icon: Package,
-    title: "Commodities",
-    description: "Access commodity market expertise",
   },
   {
     icon: LineChart,
     title: "ETFs",
-    description: "Follow diversified portfolio strategists",
   },
   {
-    icon: BarChart3,
-    title: "Indices",
-    description: "Track market trends with index experts",
+    icon: Package,
+    title: "Commodities",
   },
   {
-    icon: Building,
-    title: "REITs",
-    description: "Explore real estate investment insights",
+    icon: FileText,
+    title: "Bonds",
   },
   {
     icon: TrendingUp,
     title: "Mutual Funds",
-    description: "Discover expert fund managers and strategies",
   },
   {
-    icon: Package,
-    title: "Agro Commodities",
-    description: "Access agricultural commodity market insights",
+    icon: BarChart3,
+    title: "Stocks",
+  },
+  {
+    icon: Wheat,
+    title: "Agro",
+  },
+  {
+    icon: Activity,
+    title: "Indices",
   },
 ];
 
 export const MarketCarousel = () => {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-secondary/20">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Access Experts Across Diverse Markets
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Explore <span className="text-accent">Every Market</span>
           </h2>
-          <p className="text-lg text-muted-foreground">
-            Whatever your investment focus, find the right expertise here
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+            From traditional stocks to emerging crypto — find experts across all financial categories.
           </p>
         </div>
 
@@ -82,33 +67,32 @@ export const MarketCarousel = () => {
           }}
           plugins={[
             Autoplay({
-              delay: 3000,
+              delay: 2500,
+              stopOnInteraction: false,
             }),
           ]}
           className="w-full max-w-6xl mx-auto"
         >
-          <CarouselContent>
+          <CarouselContent className="-ml-4">
             {markets.map((market, index) => {
               const Icon = market.icon;
               return (
-                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                  <div className="p-2">
-                    <Card className="card-shadow hover:card-shadow-hover transition-smooth">
-                      <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                        <div className="p-4 rounded-full bg-primary/10">
-                          <Icon className="h-10 w-10 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-foreground">{market.title}</h3>
-                        <p className="text-sm text-muted-foreground">{market.description}</p>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <CarouselItem key={index} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/5">
+                  <Card className="border-2 border-border hover:border-primary/50 bg-card hover:shadow-lg transition-all duration-300 group cursor-pointer">
+                    <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-3">
+                      <div className="p-4 rounded-2xl bg-primary/5 group-hover:bg-primary/10 transition-colors">
+                        <Icon className="h-8 w-8 text-primary" />
+                      </div>
+                      <h3 className="text-base font-bold text-foreground">{market.title}</h3>
+                    </CardContent>
+                  </Card>
                 </CarouselItem>
               );
             })}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <div className="hidden md:block">
+            <CarouselPrevious className="left-0" />
+          </div>
         </Carousel>
       </div>
     </section>

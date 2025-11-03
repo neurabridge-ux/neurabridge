@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "react-router-dom";
@@ -25,8 +25,8 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-background/80 backdrop-blur-lg border-b"
-          : "bg-transparent"
+          ? "bg-background/95 backdrop-blur-lg border-b shadow-sm"
+          : "bg-background/80 backdrop-blur-sm"
       }`}
     >
       <div className="container mx-auto px-4 lg:px-8">
@@ -35,31 +35,50 @@ const Navbar = () => {
             <img src={neuraBridgeLogo} alt="NeuraBridge Logo" className="h-8 w-auto" />
           </button>
 
-          <div className="flex items-center space-x-4">
-            <div className="hidden lg:flex items-center space-x-4">
-              <Link to="/auth">
-                <Button variant="ghost">Login</Button>
-              </Link>
-              <Link to="/auth">
-                <Button className="bg-gradient-to-r from-primary to-accent">Get Started</Button>
-              </Link>
-            </div>
+          <div className="hidden lg:flex items-center space-x-6">
+            <Link to="/public-insights">
+              <Button variant="ghost" className="gap-2">
+                <Globe className="h-4 w-4" />
+                Public Insights
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button variant="ghost">Login</Button>
+            </Link>
+            <Link to="/auth">
+              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                Get Started
+              </Button>
+            </Link>
+          </div>
 
+          <div className="flex items-center space-x-2 lg:hidden">
+            <Link to="/public-insights">
+              <Button variant="ghost" size="icon">
+                <Globe className="h-5 w-5" />
+              </Button>
+            </Link>
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild className="lg:hidden">
+              <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px]">
                 <div className="flex flex-col space-y-4 mt-8">
-                  <Link to="/auth">
+                  <Link to="/public-insights" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start text-lg gap-2">
+                      <Globe className="h-5 w-5" />
+                      Public Insights
+                    </Button>
+                  </Link>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start text-lg">
                       Login
                     </Button>
                   </Link>
-                  <Link to="/auth">
-                    <Button className="w-full bg-gradient-to-r from-primary to-accent">
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                       Get Started
                     </Button>
                   </Link>
