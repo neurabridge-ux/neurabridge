@@ -62,29 +62,40 @@ export const NotificationBell = () => {
   };
 
   const markAsRead = async (notificationId: string) => {
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("id", notificationId);
-    
-    // Remove from local state immediately
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    try {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notificationId);
+      
+      // Update local state immediately
+      setNotifications(prev => prev.map(n => 
+        n.id === notificationId ? { ...n, read: true } : n
+      ).filter(n => !n.read));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error: any) {
+      toast.error("Failed to mark notification as read");
+    }
   };
 
   const markAllAsRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", user.id)
-      .eq("read", false);
-    
-    // Clear all notifications from local state
-    setNotifications([]);
-    setUnreadCount(0);
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
+      
+      // Clear all notifications from local state
+      setNotifications([]);
+      setUnreadCount(0);
+      toast.success("All notifications marked as read");
+    } catch (error: any) {
+      toast.error("Failed to mark all as read");
+    }
   };
 
   const handleNotificationClick = async (notification: Notification) => {

@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye, ShoppingBag } from "lucide-react";
+import { TrendingUp, Users, Search, LogOut, Heart, MessageCircle, Send, Edit2, Trash2, Eye, ShoppingBag, Globe } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PublicInsightsCarousel } from "@/components/PublicInsightsCarousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
@@ -416,41 +417,43 @@ const InvestorDashboard = () => {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <img src={neuraBridgeLogo} alt="NeuraBridge" className="h-8 w-auto" />
-              <div>
-                <h1 className="text-2xl font-bold">Investor Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Welcome back, {profile?.name}</p>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl md:text-2xl font-bold">Investor Dashboard</h1>
+              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                <Link to="/public-insights">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden sm:inline">Public</span>
+                  </Button>
+                </Link>
+                <Link to="/marketplace">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    <span className="hidden sm:inline">Market</span>
+                  </Button>
+                </Link>
+                <Link to="/investor/browse">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    <span className="hidden sm:inline">Browse</span>
+                  </Button>
+                </Link>
+                <NotificationBell />
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/marketplace">
-                <Button variant="outline">
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Marketplace
-                </Button>
-              </Link>
-              <Link to="/investor/browse">
-                <Button variant="outline">
-                  <Search className="h-4 w-4 mr-2" />
-                  Browse Experts
-                </Button>
-              </Link>
-              <NotificationBell />
-              <Button variant="ghost" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Main Feed */}
-          <div className="md:col-span-2 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* Public Insights Carousel */}
+        <PublicInsightsCarousel />
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="md:col-span-2 space-y-4 md:space-y-6">
             <Card className="card-shadow">
               <CardHeader>
                 <CardTitle>Your Insights Feed</CardTitle>

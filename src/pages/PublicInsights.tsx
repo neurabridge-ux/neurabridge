@@ -16,13 +16,22 @@ const PublicInsights = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadPublicInsights();
+    checkAuthAndLoad();
   }, []);
+
+  const checkAuthAndLoad = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Please log in to continue exploring insights");
+      navigate("/auth?redirect=/public-insights");
+      return;
+    }
+    setCurrentUserId(user.id);
+    loadPublicInsights();
+  };
 
   const loadPublicInsights = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
 
       const { data: insightsData } = await supabase
         .from("insights")
@@ -146,7 +155,7 @@ const PublicInsights = () => {
                         </p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="gap-1">
+                     <Badge className="gap-1 bg-[#00B488] text-white hover:bg-[#00966E]">
                       <Globe className="h-3 w-3" />
                       Public
                     </Badge>

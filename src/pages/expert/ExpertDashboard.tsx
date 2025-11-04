@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   TrendingUp, LogOut, Users, FileText, Settings, DollarSign, BarChart3, 
-  LayoutDashboard, X, Edit2, MessageCircle, Send, ShoppingBag, Trash2, Eye 
+  LayoutDashboard, X, Edit2, MessageCircle, Send, ShoppingBag, Trash2, Eye, Globe 
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -558,6 +558,14 @@ const ExpertDashboard = () => {
           >
             <ShoppingBag className="h-4 w-4 mr-2" />
             Marketplace
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => navigate("/public-insights")}
+          >
+            <Globe className="h-4 w-4 mr-2" />
+            Public Insights
           </Button>
         </nav>
 

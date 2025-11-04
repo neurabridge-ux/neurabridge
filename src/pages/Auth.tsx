@@ -19,6 +19,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const userType = searchParams.get("type") || "investor";
+  const redirectPath = searchParams.get("redirect") || null;
 
   useEffect(() => {
     // Check if user is already logged in
@@ -66,7 +67,9 @@ const Auth = () => {
           .eq("user_id", data.user.id)
           .single();
 
-        if (profile) {
+        if (redirectPath) {
+          navigate(redirectPath);
+        } else if (profile) {
           navigate(profile.user_type === "expert" ? "/expert/dashboard" : "/investor/dashboard");
         }
       } else {

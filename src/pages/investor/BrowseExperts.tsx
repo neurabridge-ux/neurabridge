@@ -450,7 +450,16 @@ const BrowseExperts = () => {
                           className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                           onClick={() => setSelectedTestimonial(testimonial)}
                         >
-                          {testimonial.media_type === "image" ? (
+                          {testimonial.video_url ? (
+                            <div className="w-full h-40 bg-black relative">
+                              <video 
+                                src={testimonial.video_url} 
+                                className="w-full h-full object-cover"
+                                controls
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          ) : testimonial.media_type === "image" ? (
                             <img 
                               src={testimonial.media_url} 
                               alt="Testimonial" 
@@ -468,26 +477,7 @@ const BrowseExperts = () => {
                 </>
               )}
 
-              {engagementData.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-4">Engagement Overview</h4>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={engagementData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="title" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="views" stroke="#3b82f6" name="Views" />
-                        <Line type="monotone" dataKey="likes" stroke="#f59e0b" name="Likes" />
-                        <Line type="monotone" dataKey="comments" stroke="#6b7280" name="Comments" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </>
-              )}
+              {/* Engagement chart hidden in browse view */}
             </div>
           </DialogContent>
         </Dialog>
