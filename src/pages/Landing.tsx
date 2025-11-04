@@ -6,6 +6,7 @@ import { ValueHighlights } from "@/components/landing/ValueHighlights";
 import { ExpertSection } from "@/components/landing/ExpertSection";
 import { NeuraBridgeAdvantage } from "@/components/landing/NeuraBridgeAdvantage";
 import { CardTransformation } from "@/components/landing/CardTransformation";
+import { PublicInsightsPreview } from "@/components/landing/PublicInsightsPreview";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import { Linkedin, Twitter, Youtube, Send, ArrowRight } from "lucide-react";
@@ -32,6 +33,9 @@ return (
 
       {/* NeuraBridge Advantage */}
       <NeuraBridgeAdvantage />
+
+      {/* Public Insights Preview */}
+      <PublicInsightsPreview />
 
       {/* Final CTA */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-secondary/20 via-background to-primary/5">

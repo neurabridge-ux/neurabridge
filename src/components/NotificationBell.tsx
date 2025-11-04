@@ -52,12 +52,13 @@ export const NotificationBell = () => {
       .from("notifications")
       .select("*")
       .eq("user_id", user.id)
+      .eq("read", false)
       .order("created_at", { ascending: false })
       .limit(20);
 
     if (data) {
       setNotifications(data);
-      setUnreadCount(data.filter((n) => !n.read).length);
+      setUnreadCount(data.length);
     }
   };
 
@@ -68,10 +69,8 @@ export const NotificationBell = () => {
         .update({ read: true })
         .eq("id", notificationId);
       
-      // Update local state immediately
-      setNotifications(prev => prev.map(n => 
-        n.id === notificationId ? { ...n, read: true } : n
-      ).filter(n => !n.read));
+      // Remove from local state immediately
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error: any) {
       toast.error("Failed to mark notification as read");
@@ -101,8 +100,6 @@ export const NotificationBell = () => {
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read and remove from list
     await markAsRead(notification.id);
-    // Navigate based on notification type if needed
-    // setShowNotifications(false); // Keep open so user can see other notifications
   };
 
   const handleSubscriptionRequest = async (requestId: string, action: "approved" | "declined") => {
@@ -166,11 +163,7 @@ export const NotificationBell = () => {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      notification.read
-                        ? "bg-card"
-                        : "bg-primary/5 border-primary/20"
-                    }`}
+                    className="p-3 rounded-lg border bg-primary/5 border-primary/20 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div 
@@ -187,9 +180,6 @@ export const NotificationBell = () => {
                           {new Date(notification.created_at).toLocaleString()}
                         </p>
                       </div>
-                      {!notification.read && (
-                        <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0 mt-1" />
-                      )}
                     </div>
 
                     {/* Accept/Decline buttons for subscription requests */}

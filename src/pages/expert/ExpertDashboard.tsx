@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MobileNav } from "@/components/MobileNav";
 import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
 type ViewType = "dashboard" | "content" | "subscribers" | "settings" | "marketplace";
@@ -559,14 +560,6 @@ const ExpertDashboard = () => {
             <ShoppingBag className="h-4 w-4 mr-2" />
             Marketplace
           </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={() => navigate("/public-insights")}
-          >
-            <Globe className="h-4 w-4 mr-2" />
-            Public Insights
-          </Button>
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -591,7 +584,74 @@ const ExpertDashboard = () => {
               </h2>
               <p className="text-sm text-muted-foreground">Welcome back, {profile?.name}</p>
             </div>
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <div className="hidden md:block">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/public-insights")}
+                  className="gap-2"
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="hidden lg:inline">Public</span>
+                </Button>
+              </div>
+              <NotificationBell />
+              <MobileNav>
+                <Button
+                  variant={currentView === "dashboard" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setCurrentView("dashboard")}
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant={currentView === "content" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setCurrentView("content")}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Content
+                </Button>
+                <Button
+                  variant={currentView === "subscribers" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setCurrentView("subscribers")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Subscribers
+                </Button>
+                <Button
+                  variant={currentView === "settings" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setCurrentView("settings")}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+                <Button
+                  variant={currentView === "marketplace" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => setCurrentView("marketplace")}
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Marketplace
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => navigate("/public-insights")}
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  Public Insights
+                </Button>
+                <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </MobileNav>
+            </div>
           </div>
         </header>
 

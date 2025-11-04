@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Eye, Globe, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { InsightModal } from "./InsightModal";
 
 export const PublicInsightsCarousel = () => {
   const navigate = useNavigate();
   const [insights, setInsights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInsight, setSelectedInsight] = useState<any>(null);
 
   useEffect(() => {
     loadPublicInsights();
@@ -59,7 +61,7 @@ export const PublicInsightsCarousel = () => {
           <Card
             key={insight.id}
             className="hover:shadow-lg transition-all duration-300 cursor-pointer group"
-            onClick={() => navigate("/public-insights")}
+            onClick={() => setSelectedInsight(insight)}
           >
             <CardHeader>
               <div className="flex items-start justify-between mb-2">
@@ -117,6 +119,12 @@ export const PublicInsightsCarousel = () => {
           </Card>
         ))}
       </div>
+
+      <InsightModal
+        insight={selectedInsight}
+        open={!!selectedInsight}
+        onOpenChange={(open) => !open && setSelectedInsight(null)}
+      />
     </div>
   );
 };

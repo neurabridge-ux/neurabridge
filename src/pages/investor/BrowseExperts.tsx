@@ -44,7 +44,16 @@ const BrowseExperts = () => {
       // Load all experts with their profiles
       const { data: expertsData } = await supabase
         .from("profiles")
-        .select("*, expert_profiles!inner(*)")
+        .select(`
+          *,
+          expert_profiles (
+            subscription_fee,
+            subscription_duration,
+            posting_frequency,
+            market_categories,
+            expectations
+          )
+        `)
         .eq("user_type", "expert");
 
       setExperts(expertsData || []);
@@ -271,14 +280,23 @@ const BrowseExperts = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <CardDescription className="line-clamp-3">
+                     <CardDescription className="line-clamp-3">
                       {expert.bio || "No bio available"}
                     </CardDescription>
+
+                    {expert.expert_profiles?.[0]?.expectations && (
+                      <div className="mt-2">
+                        <span className="text-xs text-muted-foreground font-semibold">What to Expect:</span>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {expert.expert_profiles[0].expectations}
+                        </p>
+                      </div>
+                    )}
 
                      <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Markets</span>
-                        <span className="font-medium">
+                        <span className="font-medium text-right">
                           {Array.isArray(expert.expert_profiles?.[0]?.market_categories) && expert.expert_profiles[0].market_categories.length > 0
                             ? expert.expert_profiles[0].market_categories.join(", ")
                             : "General"}
@@ -383,6 +401,15 @@ const BrowseExperts = () => {
                   <h3 className="text-2xl font-bold">{selectedExpert.name}</h3>
                   <p className="text-muted-foreground mt-2">{selectedExpert.bio || "No bio available"}</p>
                   
+                  {selectedExpert.expert_profiles?.[0]?.expectations && (
+                    <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-semibold">What to Expect:</span>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedExpert.expert_profiles[0].expectations}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Insights: </span>

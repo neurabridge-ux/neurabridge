@@ -14,6 +14,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PublicInsightsCarousel } from "@/components/PublicInsightsCarousel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileNav } from "@/components/MobileNav";
 import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
 
 const InvestorDashboard = () => {
@@ -419,7 +420,7 @@ const InvestorDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl md:text-2xl font-bold">Investor Dashboard</h1>
-              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+              <div className="hidden md:flex items-center gap-2 md:gap-4 flex-wrap">
                 <Link to="/public-insights">
                   <Button variant="ghost" size="sm" className="gap-2">
                     <Globe className="h-4 w-4" />
@@ -444,6 +445,30 @@ const InvestorDashboard = () => {
                   <span className="hidden sm:inline">Logout</span>
                 </Button>
               </div>
+              <MobileNav>
+                <Link to="/public-insights">
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <Globe className="h-4 w-4" />
+                    Public Insights
+                  </Button>
+                </Link>
+                <Link to="/marketplace">
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    Marketplace
+                  </Button>
+                </Link>
+                <Link to="/investor/browse">
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <Users className="h-4 w-4" />
+                    Browse Experts
+                  </Button>
+                </Link>
+                <Button variant="ghost" onClick={handleLogout} className="w-full justify-start gap-2">
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </MobileNav>
             </div>
         </div>
       </header>
