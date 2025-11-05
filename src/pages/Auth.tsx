@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp } from "lucide-react";
 import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,7 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const userType = searchParams.get("type") || "investor";
+  const [userType, setUserType] = useState(searchParams.get("type") || "investor");
   const redirectPath = searchParams.get("redirect") || null;
 
   useEffect(() => {
@@ -199,6 +200,18 @@ const Auth = () => {
                       required
                       minLength={6}
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="user-type">I am a</Label>
+                    <Select value={userType} onValueChange={setUserType}>
+                      <SelectTrigger id="user-type">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="investor">Investor</SelectItem>
+                        <SelectItem value="expert">Expert</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating..." : `Sign Up as ${userType === "expert" ? "Expert" : "Investor"}`}

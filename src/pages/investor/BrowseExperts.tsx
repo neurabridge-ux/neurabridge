@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { ExpertDetailModal } from "@/components/ExpertDetailModal";
 
 const BrowseExperts = () => {
   const navigate = useNavigate();
@@ -382,138 +383,23 @@ const BrowseExperts = () => {
         )}
       </div>
 
-      {/* Expert Detail Dialog */}
+      {/* Expert Detail Modal */}
       {selectedExpert && (
-        <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Expert Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={selectedExpert.image_url} />
-                  <AvatarFallback className="text-3xl">
-                    {selectedExpert.name?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold">{selectedExpert.name}</h3>
-                  <p className="text-muted-foreground mt-2">{selectedExpert.bio || "No bio available"}</p>
-                  
-                  {selectedExpert.expert_profiles?.[0]?.expectations && (
-                    <div className="mt-3 p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm font-semibold">What to Expect:</span>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedExpert.expert_profiles[0].expectations}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Insights: </span>
-                      <span className="font-medium">{expertInsightsCount[selectedExpert.user_id] || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Subscribers: </span>
-                      <span className="font-medium">{subscriberCounts[selectedExpert.user_id] || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Markets: </span>
-                      <span className="font-medium">
-                        {Array.isArray(selectedExpert.expert_profiles?.[0]?.market_categories) && selectedExpert.expert_profiles[0].market_categories.length > 0
-                          ? selectedExpert.expert_profiles[0].market_categories.join(", ")
-                          : "General"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Frequency: </span>
-                      <span className="font-medium capitalize">{selectedExpert.expert_profiles?.[0]?.posting_frequency || "Weekly"}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 mt-4">
-                    <div>
-                      <span className="text-sm text-muted-foreground">Subscription Fee: </span>
-                      <span className="text-lg font-semibold text-primary">
-                        {selectedExpert.expert_profiles?.[0]?.subscription_fee === 0 || 
-                         selectedExpert.expert_profiles?.[0]?.subscription_fee === null
-                          ? "Free"
-                          : `$${selectedExpert.expert_profiles?.[0]?.subscription_fee || 0}`}
-                      </span>
-                    </div>
-                    {selectedExpert.expert_profiles?.[0]?.subscription_fee > 0 && (
-                      <div>
-                        <span className="text-sm text-muted-foreground">/ </span>
-                        <span className="text-sm capitalize">
-                          {selectedExpert.expert_profiles?.[0]?.subscription_duration || "monthly"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    className="mt-4"
-                    variant={subscribedExpertIds.has(selectedExpert.user_id) ? "outline" : "default"}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSubscribe(selectedExpert.user_id);
-                    }}
-                  >
-                    {subscribedExpertIds.has(selectedExpert.user_id) ? "Unsubscribe" : "Subscribe"}
-                  </Button>
-                </div>
-              </div>
-
-              {expertTestimonials.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-4">Testimonials</h4>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {expertTestimonials.map((testimonial) => (
-                        <div 
-                          key={testimonial.id} 
-                          className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => setSelectedTestimonial(testimonial)}
-                        >
-                          {testimonial.video_url ? (
-                            <div className="w-full h-40 bg-black relative">
-                              <video 
-                                src={testimonial.video_url} 
-                                className="w-full h-full object-cover"
-                                controls
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                          ) : testimonial.media_type === "image" ? (
-                            <img 
-                              src={testimonial.media_url} 
-                              alt="Testimonial" 
-                              className="w-full h-40 object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-40 bg-muted flex items-center justify-center p-4">
-                              <p className="text-xs text-center truncate">{testimonial.media_url}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Engagement chart hidden in browse view */}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ExpertDetailModal
+          expert={selectedExpert}
+          open={!!selectedExpert}
+          onOpenChange={(open) => !open && setSelectedExpert(null)}
+          insightsCount={expertInsightsCount[selectedExpert.user_id] || 0}
+          subscribersCount={subscriberCounts[selectedExpert.user_id] || 0}
+          onSubscribe={handleSubscribe}
+          isSubscribed={subscribedExpertIds.has(selectedExpert.user_id)}
+        />
       )}
 
       {/* Testimonial Modal */}
       {selectedTestimonial && (
         <Dialog open={!!selectedTestimonial} onOpenChange={() => setSelectedTestimonial(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Testimonial</DialogTitle>
             </DialogHeader>
@@ -522,7 +408,7 @@ const BrowseExperts = () => {
                 <img 
                   src={selectedTestimonial.media_url} 
                   alt="Testimonial" 
-                  className="w-full h-auto rounded-lg"
+                  className="w-full rounded-lg"
                 />
               ) : selectedTestimonial.video_url ? (
                 <div className="aspect-video">
@@ -532,11 +418,7 @@ const BrowseExperts = () => {
                     allowFullScreen
                   />
                 </div>
-              ) : (
-                <div className="p-8 bg-muted rounded-lg">
-                  <p className="text-center">{selectedTestimonial.media_url}</p>
-                </div>
-              )}
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>
