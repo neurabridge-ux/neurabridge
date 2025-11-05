@@ -1,178 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { TrendingUp, Search, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ExpertDetailModal } from "@/components/ExpertDetailModal";
+import { useBrowseExperts } from "@/hooks/useBrowseExperts";
 
 const BrowseExperts = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [experts, setExperts] = useState<any[]>([]);
-  const [subscribedExpertIds, setSubscribedExpertIds] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
-  const [expertTestimonials, setExpertTestimonials] = useState<any[]>([]);
-  const [expertInsightsCount, setExpertInsightsCount] = useState<Record<string, number>>({});
-  const [subscriberCounts, setSubscriberCounts] = useState<Record<string, number>>({});
   const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
-  const [engagementData, setEngagementData] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadExperts();
-  }, []);
+  const {
+    loading,
+    experts,
+    subscribedExpertIds,
+    searchTerm,
+    setSearchTerm,
+    currentUserId,
+    expertInsightsCount,
+    subscriberCounts,
+    handleSubscribe,
+    handleSubscriptionRequest,
+  } = useBrowseExperts();
 
-  const loadExperts = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      setCurrentUserId(user.id);
-
-      // Load all experts with their profiles
-      const { data: expertsData } = await supabase
-        .from("profiles")
-        .select(`
-          *,
-          expert_profiles (
-            subscription_fee,
-            subscription_duration,
-            posting_frequency,
-            market_categories,
-            expectations
-          )
-        `)
-        .eq("user_type", "expert");
-
-      setExperts(expertsData || []);
-
-      // Load insights and subscriber counts for each expert
-      if (expertsData) {
-        const insightCounts: Record<string, number> = {};
-        const subCounts: Record<string, number> = {};
-        
-        for (const expert of expertsData) {
-          const { count: insightCount } = await supabase
-            .from("insights")
-            .select("*", { count: "exact", head: true })
-            .eq("expert_id", expert.user_id);
-          
-          const { count: subCount } = await supabase
-            .from("subscriptions")
-            .select("*", { count: "exact", head: true })
-            .eq("expert_id", expert.user_id);
-          
-          insightCounts[expert.user_id] = insightCount || 0;
-          subCounts[expert.user_id] = subCount || 0;
-        }
-        
-        setExpertInsightsCount(insightCounts);
-        setSubscriberCounts(subCounts);
-      }
-
-      // Load current subscriptions
-      const { data: subsData } = await supabase
-        .from("subscriptions")
-        .select("expert_id")
-        .eq("investor_id", user.id);
-
-      setSubscribedExpertIds(new Set(subsData?.map(s => s.expert_id) || []));
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubscribe = async (expertId: string) => {
-    try {
-      if (!currentUserId) return;
-
-      if (subscribedExpertIds.has(expertId)) {
-        // Unsubscribe
-        await supabase
-          .from("subscriptions")
-          .delete()
-          .eq("investor_id", currentUserId)
-          .eq("expert_id", expertId);
-
-        setSubscribedExpertIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(expertId);
-          return newSet;
-        });
-
-        toast.success("Unsubscribed successfully");
-      } else {
-        // Subscribe
-        await supabase.from("subscriptions").insert({
-          investor_id: currentUserId,
-          expert_id: expertId,
-        });
-
-        // Notify the expert
-        const expert = experts.find(e => e.user_id === expertId);
-        await supabase.from("notifications").insert({
-          user_id: expertId,
-          type: "new_subscriber",
-          message: `You have a new subscriber!`,
-        });
-
-        setSubscribedExpertIds(prev => new Set(prev).add(expertId));
-        toast.success(`Subscribed to ${expert?.name}`);
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const viewExpertDetails = async (expert: any) => {
+  const viewExpertDetails = (expert: any) => {
     setSelectedExpert(expert);
-
-    // Load testimonials
-    const { data: testimonialsData } = await supabase
-      .from("testimonials")
-      .select("*")
-      .eq("expert_id", expert.user_id);
-
-    setExpertTestimonials(testimonialsData || []);
-
-    // Load engagement data for chart
-    const { data: insightsData } = await supabase
-      .from("insights")
-      .select("*")
-      .eq("expert_id", expert.user_id)
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    if (insightsData) {
-      const engagement = insightsData.reverse().map((insight) => ({
-        title: insight.title.substring(0, 15) + "...",
-        views: insight.views_count || 0,
-        likes: insight.likes_count || 0,
-        comments: 0, // Would need to count from comments table
-      }));
-      setEngagementData(engagement);
-    }
   };
-
-  const filteredExperts = experts.filter(expert =>
-    expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.bio?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (loading) {
     return (
@@ -244,7 +103,7 @@ const BrowseExperts = () => {
         </Card>
 
         {/* Experts Grid */}
-        {filteredExperts.length === 0 ? (
+        {experts.length === 0 ? (
           <Card className="card-shadow">
             <CardContent className="pt-12 pb-12 text-center">
               <p className="text-muted-foreground">No experts found</p>
@@ -252,7 +111,7 @@ const BrowseExperts = () => {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredExperts.map((expert) => {
+            {experts.map((expert) => {
               const expertProfile = expert.expert_profiles?.[0];
               const isSubscribed = subscribedExpertIds.has(expert.user_id);
 
@@ -348,17 +207,9 @@ const BrowseExperts = () => {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          try {
-                            await supabase.from("subscription_requests").insert({
-                              investor_id: currentUserId,
-                              expert_id: expert.user_id,
-                            });
-                            toast.success("Enrolment request sent to expert");
-                          } catch (error: any) {
-                            toast.error(error.message);
-                          }
+                          handleSubscriptionRequest(expert.user_id);
                         }}
                       >
                         Request Enrolment
@@ -367,7 +218,7 @@ const BrowseExperts = () => {
                     <Button
                       className="w-full"
                       variant="secondary"
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/marketplace?expert=${expert.user_id}`);
                       }}

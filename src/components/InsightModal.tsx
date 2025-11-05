@@ -4,10 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, MessageCircle, Eye, Globe, Send } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useInsightInteractions } from "@/hooks/useInsightInteractions";
 
 interface InsightModalProps {
   insight: any;
@@ -16,100 +14,21 @@ interface InsightModalProps {
 }
 
 export const InsightModal = ({ insight, open, onOpenChange }: InsightModalProps) => {
-  const [comments, setComments] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState("");
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(insight?.likes_count || 0);
+  const {
+    comments,
+    liked,
+    likeCount,
+    setLikeCount,
+    newComment,
+    setNewComment,
+    handleLike,
+    handleComment,
+  } = useInsightInteractions(insight?.id || "");
 
-  useEffect(() => {
-    if (insight) {
-      loadComments();
-      checkIfLiked();
-      setLikeCount(insight.likes_count || 0);
-    }
-  }, [insight]);
-
-  const loadComments = async () => {
-    if (!insight) return;
-
-    const { data } = await supabase
-      .from("comments")
-      .select("*, profiles(*)")
-      .eq("insight_id", insight.id)
-      .is("parent_comment_id", null)
-      .order("created_at", { ascending: false });
-
-    setComments(data || []);
-  };
-
-  const checkIfLiked = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !insight) return;
-
-    const { data } = await supabase
-      .from("insight_likes")
-      .select("*")
-      .eq("insight_id", insight.id)
-      .eq("user_id", user.id)
-      .single();
-
-    setLiked(!!data);
-  };
-
-  const handleLike = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Please login to like insights");
-      return;
-    }
-
-    try {
-      if (liked) {
-        await supabase
-          .from("insight_likes")
-          .delete()
-          .eq("insight_id", insight.id)
-          .eq("user_id", user.id);
-        setLiked(false);
-        setLikeCount(prev => prev - 1);
-      } else {
-        await supabase
-          .from("insight_likes")
-          .insert({ insight_id: insight.id, user_id: user.id });
-        setLiked(true);
-        setLikeCount(prev => prev + 1);
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleComment = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Please login to comment");
-      return;
-    }
-
-    if (!newComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-
-    try {
-      await supabase.from("comments").insert({
-        insight_id: insight.id,
-        user_id: user.id,
-        content: newComment,
-      });
-
-      setNewComment("");
-      loadComments();
-      toast.success("Comment added");
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
+  // Update like count when insight prop changes
+  if (insight && likeCount === 0 && insight.likes_count) {
+    setLikeCount(insight.likes_count);
+  }
 
   if (!insight) return null;
 
