@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Eye, ArrowLeft, Globe } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { InsightModal } from "@/components/InsightModal";
 
 const PublicInsights = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedInsight, setSelectedInsight] = useState<any>(null);
 
   useEffect(() => {
     checkAuthAndLoad();
@@ -140,6 +142,7 @@ const PublicInsights = () => {
               <Card
                 key={insight.id}
                 className="hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                onClick={() => setSelectedInsight(insight)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between mb-2">
@@ -210,6 +213,15 @@ const PublicInsights = () => {
           </div>
         )}
       </div>
+
+      {/* Insight Detail Modal */}
+      {selectedInsight && (
+        <InsightModal
+          insight={selectedInsight}
+          open={!!selectedInsight}
+          onOpenChange={(open) => !open && setSelectedInsight(null)}
+        />
+      )}
     </div>
   );
 };

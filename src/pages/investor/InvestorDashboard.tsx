@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PublicInsightsCarousel } from "@/components/PublicInsightsCarousel";
-import { PublicInsightsModal } from "@/components/PublicInsightsModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MobileNav } from "@/components/MobileNav";
 import neuraBridgeLogo from "@/assets/neurabridge-logo.png";
@@ -38,7 +37,6 @@ const InvestorDashboard = () => {
   const [editCommentContent, setEditCommentContent] = useState<string>("");
   const [publicInsights, setPublicInsights] = useState<any[]>([]);
   const [selectedInsight, setSelectedInsight] = useState<any>(null);
-  const [showPublicInsightsModal, setShowPublicInsightsModal] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -427,7 +425,7 @@ const InvestorDashboard = () => {
                   variant="ghost" 
                   size="sm" 
                   className="gap-2"
-                  onClick={() => setShowPublicInsightsModal(true)}
+                  onClick={() => navigate("/public-insights")}
                 >
                   <Globe className="h-4 w-4" />
                   <span className="hidden sm:inline">Public</span>
@@ -454,7 +452,7 @@ const InvestorDashboard = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start gap-2"
-                  onClick={() => setShowPublicInsightsModal(true)}
+                  onClick={() => navigate("/public-insights")}
                 >
                   <Globe className="h-4 w-4" />
                   Public Insights
@@ -958,12 +956,6 @@ const InvestorDashboard = () => {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Public Insights Modal */}
-      <PublicInsightsModal 
-        open={showPublicInsightsModal}
-        onOpenChange={setShowPublicInsightsModal}
-      />
     </div>
   );
 };

@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, Search, ArrowLeft, ShoppingBag } from "lucide-react";
+import { TrendingUp, Search, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExpertDetailModal } from "@/components/ExpertDetailModal";
 import { useBrowseExperts } from "@/hooks/useBrowseExperts";
@@ -14,7 +13,6 @@ import { useBrowseExperts } from "@/hooks/useBrowseExperts";
 const BrowseExperts = () => {
   const navigate = useNavigate();
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
 
   const {
     loading,
@@ -121,17 +119,17 @@ const BrowseExperts = () => {
                   className="card-shadow hover:card-shadow-hover transition-smooth cursor-pointer"
                   onClick={() => viewExpertDetails(expert)}
                 >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={expert.image_url} />
-                          <AvatarFallback>{expert.name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{expert.name}</CardTitle>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start space-x-3">
+                      <Avatar className="h-14 w-14 flex-shrink-0">
+                        <AvatarImage src={expert.image_url} />
+                        <AvatarFallback className="text-lg">{expert.name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base md:text-lg truncate">{expert.name}</CardTitle>
+                        <div className="flex flex-wrap gap-1 mt-1">
                           {isSubscribed && (
-                            <Badge variant="secondary" className="mt-1">
+                            <Badge variant="secondary" className="text-xs">
                               Subscribed
                             </Badge>
                           )}
@@ -139,23 +137,23 @@ const BrowseExperts = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                     <CardDescription className="line-clamp-3">
+                  <CardContent className="space-y-3 pt-0">
+                    <CardDescription className="line-clamp-2 text-sm">
                       {expert.bio || "No bio available"}
                     </CardDescription>
 
                     {expert.expert_profiles?.[0]?.expectations && (
-                      <div className="mt-2">
-                        <span className="text-xs text-muted-foreground font-semibold">What to Expect:</span>
+                      <div className="bg-accent/10 rounded-lg p-2">
+                        <span className="text-xs font-semibold">What to Expect:</span>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {expert.expert_profiles[0].expectations}
                         </p>
                       </div>
                     )}
 
-                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Markets</span>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-muted-foreground flex-shrink-0">Markets:</span>
                         <span className="font-medium text-right">
                           {Array.isArray(expert.expert_profiles?.[0]?.market_categories) && expert.expert_profiles[0].market_categories.length > 0
                             ? expert.expert_profiles[0].market_categories.join(", ")
@@ -163,23 +161,23 @@ const BrowseExperts = () => {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Insights Posted</span>
+                        <span className="text-muted-foreground">Insights:</span>
                         <span className="font-medium">{expertInsightsCount[expert.user_id] || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subscribers</span>
+                        <span className="text-muted-foreground">Subscribers:</span>
                         <span className="font-medium">{subscriberCounts[expert.user_id] || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Posting Frequency</span>
+                        <span className="text-muted-foreground">Posting:</span>
                         <span className="font-medium capitalize">{expert.expert_profiles?.[0]?.posting_frequency || "Weekly"}</span>
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t">
+                    <div className="pt-2 border-t space-y-1">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Subscription Fee</span>
-                        <span className="font-semibold text-primary">
+                        <span className="text-xs text-muted-foreground">Subscription Fee</span>
+                        <span className="font-semibold text-primary text-sm">
                           {expertProfile?.subscription_fee === 0 || expertProfile?.subscription_fee === null
                             ? "Free"
                             : `$${expertProfile?.subscription_fee || 0}`}
@@ -187,17 +185,19 @@ const BrowseExperts = () => {
                       </div>
                       {expertProfile?.subscription_fee > 0 && (
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Duration</span>
-                          <span className="text-sm capitalize">
+                          <span className="text-xs text-muted-foreground">Duration</span>
+                          <span className="text-xs capitalize">
                             {expertProfile?.subscription_duration || "monthly"}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-2 pt-2">
                       <Button
+                        className="w-full"
                         variant={isSubscribed ? "outline" : "default"}
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSubscribe(expert.user_id);
@@ -206,7 +206,9 @@ const BrowseExperts = () => {
                         {isSubscribed ? "Unsubscribe" : "Subscribe"}
                       </Button>
                       <Button
+                        className="w-full"
                         variant="outline"
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSubscriptionRequest(expert.user_id);
@@ -215,17 +217,6 @@ const BrowseExperts = () => {
                         Request Enrolment
                       </Button>
                     </div>
-                    <Button
-                      className="w-full"
-                      variant="secondary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/marketplace?expert=${expert.user_id}`);
-                      }}
-                    >
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      View Marketplace
-                    </Button>
                   </CardContent>
                 </Card>
               );
@@ -245,34 +236,6 @@ const BrowseExperts = () => {
           onSubscribe={handleSubscribe}
           isSubscribed={subscribedExpertIds.has(selectedExpert.user_id)}
         />
-      )}
-
-      {/* Testimonial Modal */}
-      {selectedTestimonial && (
-        <Dialog open={!!selectedTestimonial} onOpenChange={() => setSelectedTestimonial(null)}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Testimonial</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {selectedTestimonial.media_type === "image" ? (
-                <img 
-                  src={selectedTestimonial.media_url} 
-                  alt="Testimonial" 
-                  className="w-full rounded-lg"
-                />
-              ) : selectedTestimonial.video_url ? (
-                <div className="aspect-video">
-                  <iframe
-                    src={selectedTestimonial.video_url}
-                    className="w-full h-full rounded-lg"
-                    allowFullScreen
-                  />
-                </div>
-              ) : null}
-            </div>
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );

@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ImageUpload } from "@/components/ImageUpload";
 import { NotificationBell } from "@/components/NotificationBell";
-import { PublicInsightsModal } from "@/components/PublicInsightsModal";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,7 +58,6 @@ const ExpertDashboard = () => {
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
   const [marketCategories, setMarketCategories] = useState<string[]>([]);
   const [expectations, setExpectations] = useState("");
-  const [showPublicInsightsModal, setShowPublicInsightsModal] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -591,7 +590,7 @@ const ExpertDashboard = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowPublicInsightsModal(true)}
+                  onClick={() => navigate("/public-insights")}
                   className="gap-2"
                 >
                   <Globe className="h-4 w-4" />
@@ -643,7 +642,7 @@ const ExpertDashboard = () => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
-                  onClick={() => setShowPublicInsightsModal(true)}
+                  onClick={() => navigate("/public-insights")}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   Public Insights
@@ -1589,12 +1588,6 @@ const ExpertDashboard = () => {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Public Insights Modal */}
-      <PublicInsightsModal 
-        open={showPublicInsightsModal}
-        onOpenChange={setShowPublicInsightsModal}
-      />
     </div>
   );
 };

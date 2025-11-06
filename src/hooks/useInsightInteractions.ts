@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { insightService } from "@/services/insightService";
 import { commentService } from "@/services/commentService";
@@ -9,6 +10,8 @@ export const useInsightInteractions = (insightId: string) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (insightId) {
@@ -18,11 +21,28 @@ export const useInsightInteractions = (insightId: string) => {
   }, [insightId]);
 
   const loadComments = async () => {
-    try {
-      const data = await commentService.getComments(insightId);
-      setComments(data);
-    } catch (error: any) {
-      console.error("Error loading comments:", error);
+    if (!insightId) return;
+    
+    const { data } = await supabase
+      .from("comments")
+      .select("*, profiles(*)")
+      .eq("insight_id", insightId)
+      .is("parent_comment_id", null)
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      const commentsWithReplies = await Promise.all(
+        data.map(async (comment) => {
+          const { data: replies } = await supabase
+            .from("comments")
+            .select("*, profiles(*)")
+            .eq("parent_comment_id", comment.id)
+            .order("created_at", { ascending: true });
+          
+          return { ...comment, replies: replies || [] };
+        })
+      );
+      setComments(commentsWithReplies);
     }
   };
 
@@ -60,31 +80,32 @@ export const useInsightInteractions = (insightId: string) => {
     }
   };
 
-  const handleComment = async () => {
-    try {
-      const user = await authService.getUser();
-      if (!user) {
-        toast.error("Please login to comment");
-        return;
-      }
+  const handleComment = async (parentCommentId?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !insightId) return;
 
-      if (!newComment.trim()) {
-        toast.error("Please enter a comment");
-        return;
-      }
-
-      await commentService.createComment({
-        insight_id: insightId,
-        user_id: user.id,
-        content: newComment,
-      });
-
-      setNewComment("");
-      loadComments();
-      toast.success("Comment added");
-    } catch (error: any) {
-      toast.error(error.message);
+    const content = parentCommentId ? replyContent[parentCommentId] : newComment;
+    if (!content?.trim()) {
+      toast.error("Please enter a comment");
+      return;
     }
+
+    await supabase.from("comments").insert({
+      insight_id: insightId,
+      user_id: user.id,
+      content: content,
+      parent_comment_id: parentCommentId || null,
+    });
+    
+    if (parentCommentId) {
+      setReplyContent({ ...replyContent, [parentCommentId]: "" });
+      setReplyTo(null);
+    } else {
+      setNewComment("");
+    }
+    
+    loadComments();
+    toast.success(parentCommentId ? "Reply added" : "Comment added");
   };
 
   return {
@@ -94,8 +115,11 @@ export const useInsightInteractions = (insightId: string) => {
     setLikeCount,
     newComment,
     setNewComment,
+    replyTo,
+    setReplyTo,
+    replyContent,
+    setReplyContent,
     handleLike,
     handleComment,
-    loadComments,
   };
 };

@@ -21,6 +21,10 @@ export const InsightModal = ({ insight, open, onOpenChange }: InsightModalProps)
     setLikeCount,
     newComment,
     setNewComment,
+    replyTo,
+    setReplyTo,
+    replyContent,
+    setReplyContent,
     handleLike,
     handleComment,
   } = useInsightInteractions(insight?.id || "");
@@ -114,7 +118,7 @@ export const InsightModal = ({ insight, open, onOpenChange }: InsightModalProps)
                     }
                   }}
                 />
-                <Button onClick={handleComment} size="icon">
+                <Button onClick={() => handleComment()} size="icon">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -127,19 +131,75 @@ export const InsightModal = ({ insight, open, onOpenChange }: InsightModalProps)
               ) : (
                 <div className="space-y-4">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="flex items-start space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.profiles?.image_url} />
-                        <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="bg-muted rounded-lg p-3">
-                          <p className="text-sm font-medium">{comment.profiles?.name}</p>
-                          <p className="text-sm mt-1">{comment.content}</p>
+                    <div key={comment.id} className="space-y-2">
+                      <div className="flex items-start space-x-3">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={comment.profiles?.image_url} />
+                          <AvatarFallback>{comment.profiles?.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-muted rounded-lg p-3">
+                            <p className="text-sm font-medium">{comment.profiles?.name}</p>
+                            <p className="text-sm mt-1 break-words">{comment.content}</p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(comment.created_at).toLocaleString()}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs"
+                              onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                            >
+                              {replyTo === comment.id ? "Cancel" : "Reply"}
+                            </Button>
+                          </div>
+
+                          {/* Reply Input */}
+                          {replyTo === comment.id && (
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                placeholder="Write a reply..."
+                                value={replyContent[comment.id] || ""}
+                                onChange={(e) => setReplyContent({ ...replyContent, [comment.id]: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleComment(comment.id);
+                                  }
+                                }}
+                                className="text-sm"
+                              />
+                              <Button onClick={() => handleComment(comment.id)} size="sm">
+                                <Send className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Replies */}
+                          {comment.replies && comment.replies.length > 0 && (
+                            <div className="mt-3 space-y-2 pl-4 border-l-2 border-border">
+                              {comment.replies.map((reply: any) => (
+                                <div key={reply.id} className="flex items-start space-x-2">
+                                  <Avatar className="h-6 w-6 flex-shrink-0">
+                                    <AvatarImage src={reply.profiles?.image_url} />
+                                    <AvatarFallback>{reply.profiles?.name?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="bg-muted rounded-lg p-2">
+                                      <p className="text-xs font-medium">{reply.profiles?.name}</p>
+                                      <p className="text-xs mt-1 break-words">{reply.content}</p>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {new Date(reply.created_at).toLocaleString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(comment.created_at).toLocaleString()}
-                        </p>
                       </div>
                     </div>
                   ))}
